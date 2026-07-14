@@ -3,4 +3,3 @@
 from sheetproof.cli import main
 
 main()
-

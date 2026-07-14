@@ -37,6 +37,11 @@ dev = [
   "types-PyYAML>=6.0.12",
 ]
 
+[project.urls]
+Homepage = "https://github.com/huangyikai05/SheetProof"
+Repository = "https://github.com/huangyikai05/SheetProof"
+Issues = "https://github.com/huangyikai05/SheetProof/issues"
+
 [project.scripts]
 sheetproof = "sheetproof.cli:app"
 

@@ -1,0 +1,52 @@
+name: Feature request
+description: Propose a focused deterministic review capability.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the workbook fact, evidence, and deterministic decision rule. AI-generated prose
+        cannot replace validation logic.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Review problem
+      description: What spreadsheet-review problem cannot be expressed today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Deterministic evidence and behavior
+      description: >-
+        Which OOXML/workbook facts should be read, and what exact result should they produce?
+    validations:
+      required: true
+
+  - type: textarea
+    id: interface
+    attributes:
+      label: Proposed interface
+      description: Show any proposed YAML, CLI, or ReviewResult shape.
+
+  - type: textarea
+    id: limits
+    attributes:
+      label: Limits and security considerations
+      description: Include resource bounds, unsupported cases, and untrusted-input concerns.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: The proposal keeps verdicts deterministic and testable.
+          required: true
+        - label: >-
+            The proposal does not require uploading user workbooks or executing VBA/external content.
+          required: true

@@ -1,0 +1,50 @@
+rules:
+  - name: Core cash-flow formulas must remain formulas
+    type: formula_required
+    range: "现金流!B5:B20"
+    severity: high
+
+  - name: Forecast edits are restricted to the input area
+    type: allowed_change_range
+    ranges:
+      - "预测!D5:H30"
+    severity: high
+
+  - name: Do not add external links
+    type: no_external_links
+    severity: critical
+
+  - name: Do not add hidden sheets
+    type: no_new_hidden_sheets
+    severity: high
+
+  - name: Do not add macros
+    type: no_macro_added
+    severity: critical
+
+  - name: Margin should be plausible when a cached result exists
+    type: numeric_range
+    target: "利润表!F18"
+    min: 0
+    max: 0.6
+    severity: medium
+
+  - name: Profit and loss sheet is required
+    type: required_sheet
+    sheet: "利润表"
+
+  - name: Temporary imports are forbidden
+    type: forbidden_sheet
+    sheet: "临时导入"
+
+  - name: Keep pull requests focused
+    type: max_changed_cells
+    max: 4
+    severity: medium
+    failure_status: WARNING
+
+critical_cells:
+  - "现金流!B22"
+block_risk_level: HIGH
+max_dependency_depth: 10
+max_dependency_nodes: 10000

@@ -15,4 +15,3 @@ class ConfigurationError(SheetProofError):
 
 class ReportGenerationError(SheetProofError):
     """Raised when a report cannot be generated."""
-
