@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sheetproof"
+version = "0.1.0"
+description = "Deterministic semantic review and CI for Excel workbook changes"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "SheetProof contributors" }]
+keywords = ["excel", "xlsx", "audit", "diff", "ci", "spreadsheet"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Office/Business :: Financial :: Spreadsheet",
+]
+dependencies = [
+  "Jinja2>=3.1.4,<4",
+  "openpyxl>=3.1.5,<4",
+  "pydantic>=2.8,<3",
+  "PyYAML>=6.0.2,<7",
+  "typer>=0.12.5,<1",
+]
+
+[project.optional-dependencies]
+web = ["streamlit>=1.39,<2"]
+dev = [
+  "mypy>=1.11,<2",
+  "pytest>=8.3,<9",
+  "pytest-cov>=5,<7",
+  "ruff>=0.7,<1",
+  "types-PyYAML>=6.0.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/huangyikai05/SheetProof"
+Repository = "https://github.com/huangyikai05/SheetProof"
+Issues = "https://github.com/huangyikai05/SheetProof/issues"
+
+[project.scripts]
+sheetproof = "sheetproof.cli:app"
+
+[tool.setuptools.packages.find]
+include = ["sheetproof*"]
+
+[tool.setuptools.package-data]
+"sheetproof.reports" = ["templates/*.j2"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-config --strict-markers"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = ["examples/generated"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["sheetproof"]
+check_untyped_defs = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = ["openpyxl.*", "yaml.*"]
+ignore_missing_imports = true

@@ -1,0 +1,81 @@
+name: Bug report
+description: Report reproducible incorrect behavior without sharing sensitive workbooks.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug. Use a small synthetic workbook and remove all private data.
+        Report vulnerabilities through the private process in SECURITY.md.
+
+  - type: input
+    id: version
+    attributes:
+      label: SheetProof version or commit
+      description: Output of `sheetproof version` and, when relevant, the commit SHA.
+      placeholder: 0.1.0 / abc1234
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, Python version, and installation method.
+      placeholder: Ubuntu 24.04, Python 3.11, editable install
+    validations:
+      required: true
+
+  - type: dropdown
+    id: interface
+    attributes:
+      label: Interface
+      options:
+        - CLI
+        - Python API
+        - Streamlit
+        - GitHub Action
+        - Report output
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Include exact commands and a minimal synthetic workbook generator when possible.
+      placeholder: |
+        1. Create a workbook with ...
+        2. Run `sheetproof compare ...`
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected deterministic result
+      description: State the expected change type, rule status, exit code, or report field.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Paste concise terminal output or sanitized JSON. Do not attach private workbooks.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Data and security checks
+      options:
+        - label: >-
+            I used synthetic or fully sanitized data and did not include secrets or personal data.
+          required: true
+        - label: This report does not disclose a security vulnerability.
+          required: true
