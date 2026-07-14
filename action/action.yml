@@ -1,0 +1,102 @@
+name: SheetProof workbook review
+description: Compare modified or renamed Excel workbooks with deterministic SheetProof checks.
+author: SheetProof contributors
+
+branding:
+  icon: check-square
+  color: green
+
+inputs:
+  base-ref:
+    description: Current trusted base commit; discovery uses its merge base with head-ref.
+    required: true
+  head-ref:
+    description: Head commit SHA or safe Git reference. The commit must be available locally.
+    required: false
+    default: HEAD
+  config:
+    description: Optional repository-relative SheetProof policy path.
+    required: false
+    default: sheetproof.yml
+  config-ref:
+    description: Trusted commit containing the policy. Defaults to base-ref.
+    required: false
+    default: ""
+  repository:
+    description: Checkout containing both base and head commits.
+    required: false
+    default: .
+  fail-on:
+    description: Block at or above LOW, MEDIUM, HIGH, or CRITICAL.
+    required: false
+    default: HIGH
+  output-dir:
+    description: New repository-relative report directory; it must not already exist.
+    required: false
+    default: sheetproof-reports
+  allow-unpaired:
+    description: Advisory mode; allow added, deleted, or otherwise unpaired workbooks to be skipped.
+    required: false
+    default: "false"
+  python-version:
+    description: Python version passed to actions/setup-python.
+    required: false
+    default: "3.11"
+
+outputs:
+  report-directory:
+    description: Repository-relative directory containing review artifacts.
+    value: ${{ steps.review.outputs.report-directory }}
+  compared-count:
+    description: Number of modified or renamed workbook pairs compared.
+    value: ${{ steps.review.outputs.compared-count }}
+  skipped-count:
+    description: Number of workbook changes explicitly skipped.
+    value: ${{ steps.review.outputs.skipped-count }}
+  review-exit-code:
+    description: Aggregate SheetProof exit code (0 pass, 1 blocked, 2 input, 3 internal).
+    value: ${{ steps.review.outputs.review-exit-code }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install SheetProof
+      shell: bash
+      env:
+        SHEETPROOF_SOURCE: ${{ github.action_path }}/..
+        PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      run: python -m pip install "$SHEETPROOF_SOURCE"
+
+    - name: Review changed workbooks
+      id: review
+      shell: bash
+      env:
+        INPUT_BASE_REF: ${{ inputs.base-ref }}
+        INPUT_HEAD_REF: ${{ inputs.head-ref }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_CONFIG_REF: ${{ inputs.config-ref }}
+        INPUT_REPOSITORY: ${{ inputs.repository }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_OUTPUT_DIR: ${{ inputs.output-dir }}
+        INPUT_ALLOW_UNPAIRED: ${{ inputs.allow-unpaired }}
+        PYTHONUTF8: "1"
+        SHEETPROOF_SCRIPT: ${{ github.action_path }}/../scripts/review_changed_workbooks.py
+      run: |
+        args=(
+          --repository "$INPUT_REPOSITORY"
+          --base "$INPUT_BASE_REF"
+          --head "$INPUT_HEAD_REF"
+          --config-ref "${INPUT_CONFIG_REF:-$INPUT_BASE_REF}"
+          --config "$INPUT_CONFIG"
+          --fail-on "$INPUT_FAIL_ON"
+          --output-dir "$INPUT_OUTPUT_DIR"
+        )
+        if [[ "${INPUT_ALLOW_UNPAIRED,,}" == "true" ]]; then
+          args+=(--allow-unpaired)
+        fi
+        python "$SHEETPROOF_SCRIPT" "${args[@]}"
