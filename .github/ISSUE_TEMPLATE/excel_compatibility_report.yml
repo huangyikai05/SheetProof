@@ -1,0 +1,106 @@
+name: Excel compatibility report
+description: Report a reproducible workbook compatibility problem using only synthetic data.
+title: "[Compatibility]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve support for Excel-generated workbooks by providing the smallest possible
+        synthetic reproduction. GitHub issues and attachments are public: remove sensitive data
+        and never upload personal data, financial records, company-confidential information,
+        credentials, or secrets. Report security vulnerabilities through `SECURITY.md` instead.
+
+  - type: input
+    id: sheetproof-version
+    attributes:
+      label: SheetProof version or commit
+      description: Paste the output of `sheetproof version` and, when relevant, the commit SHA.
+      placeholder: 0.1.0 / abc1234
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system and Python version
+      placeholder: Windows 11, Python 3.12.4
+    validations:
+      required: true
+
+  - type: input
+    id: excel-origin
+    attributes:
+      label: Workbook producer and version
+      description: Identify the application that last saved the workbook, if known.
+      placeholder: Microsoft Excel for Microsoft 365, version 2406
+    validations:
+      required: true
+
+  - type: dropdown
+    id: format
+    attributes:
+      label: Workbook format
+      options:
+        - .xlsx
+        - .xlsm
+        - Other or unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: workbook-features
+    attributes:
+      label: Relevant workbook features
+      description: >-
+        List the formulas, tables, named ranges, links, charts, macros, protection, or other
+        features needed to reproduce the problem. Do not paste real workbook content.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: >-
+        Provide exact commands and preferably a short script that generates a synthetic workbook.
+        Attach a workbook only when a generator cannot reproduce the issue.
+      placeholder: |
+        1. Generate a synthetic workbook with ...
+        2. Run `sheetproof inspect ...` or `sheetproof compare ...`
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected deterministic result
+      description: State the expected fact, diff, rule status, report field, or exit code.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Paste concise sanitized output, including the full error traceback when present.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: public-data-confirmation
+    attributes:
+      label: Required public-data confirmation
+      options:
+        - label: >-
+            I confirm that every pasted value and attachment is synthetic or fully sanitized and
+            contains no personal data, financial data, company-confidential information,
+            credentials, or secrets.
+          required: true
+        - label: >-
+            I reduced the report to the smallest practical reproduction and removed unrelated
+            workbook content and metadata.
+          required: true
+        - label: I confirm this report does not disclose a security vulnerability.
+          required: true
