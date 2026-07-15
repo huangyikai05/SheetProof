@@ -1,200 +1,267 @@
 # SheetProof
 
-**Deterministic semantic review and CI for Excel workbook changes.**
+[![CI](https://github.com/huangyikai05/SheetProof/actions/workflows/ci.yml/badge.svg)](https://github.com/huangyikai05/SheetProof/actions/workflows/ci.yml)
+[![Tested on Python 3.11 and 3.12](https://img.shields.io/badge/tested-Python%203.11%20%7C%203.12-3776AB?logo=python&logoColor=white)](https://github.com/huangyikai05/SheetProof/blob/main/pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/huangyikai05/SheetProof/blob/main/LICENSE)
 
-SheetProof compares a before and after `.xlsx` or `.xlsm` workbook, records evidence in one
-typed result, assigns an explainable risk score, evaluates optional business rules, and writes
-JSON and offline HTML review reports. It works without an API key and does not ask an AI model
-to decide whether a change is safe.
+**Deterministic spreadsheet change review and CI for Excel workbooks.**
 
-> Programs validate. AI may explain.
+SheetProof is an open-source spreadsheet review and CI tool that detects risky Excel changes,
+formula overwrites, structural modifications, dependency impacts, and business-rule violations
+before they reach production.
 
-SheetProof is an alpha MVP. Read [Known limitations](#13-known-limitations) before using it for
-important decisions.
+SheetProof 是一个开源的 Excel 变更审查与持续集成工具，用于在文件投入使用前发现公式覆盖、
+结构变化、依赖影响和业务规则违规。
 
-## 1. Project overview
+Install the current public source and compare two workbooks:
 
-Spreadsheet files are ZIP-based documents rather than line-oriented source files. A normal Git
-diff cannot explain that a formula became a fixed value, a hidden sheet appeared, or a named
-range moved. SheetProof turns those workbook facts into reviewable, machine-readable evidence
-and a CI-compatible exit code.
+~~~bash
+python -m pip install "sheetproof @ git+https://github.com/huangyikai05/SheetProof.git@main"
+sheetproof compare before.xlsx after.xlsx --html report.html
+~~~
 
-The current release is entirely local: one review takes two files and an optional YAML policy.
-The CLI, HTML report, Streamlit page, and GitHub Action all call the same deterministic review
-service and consume the same Pydantic result.
+The generated risky demo produces this real result:
 
-## 2. Why SheetProof
+~~~text
+SheetProof Review
 
-Human and automated edits can both introduce subtle spreadsheet errors. Common examples include
-overwriting one formula in a copied column, shortening a total range, adding an external link,
-or changing content outside an approved forecast area. These changes may still leave a workbook
-that opens normally.
+Risk score:             100/100
+Risk level:             CRITICAL
+Changed cells:          5
+Changed formulas:       3
+Formula overwrites:     1
+Hidden sheets added:    1
+External links added:   1
+Rules:                  4 failed, 1 warning, 1 skipped
+Exit code:              1
+~~~
 
-SheetProof provides evidence for pull-request review:
+The exact CLI summary is:
 
-- semantic changes instead of raw XML noise;
-- explicit formula-overwrite and copied-pattern findings;
-- bounded downstream dependency impact;
-- project-specific policy checks;
-- a reproducible score with named point contributions;
-- local reports and merge gating without a paid service.
+~~~text
+Risk 100/100 (CRITICAL); 5 changed cells; 1 formula overwrites; 4 failed, 1 warning, and 0 errored rules.
+~~~
 
-It is a review aid, not a guarantee that a workbook is financially, legally, or operationally
-correct.
+[Run the safe demo](https://github.com/huangyikai05/SheetProof/blob/main/docs/demo-safe.md) ·
+[Run the risky demo](https://github.com/huangyikai05/SheetProof/blob/main/docs/demo-risky.md) ·
+[Record the 30–60 second demo](https://github.com/huangyikai05/SheetProof/blob/main/docs/demo-script.md) ·
+[Read the v0.1.0 release draft](https://github.com/huangyikai05/SheetProof/blob/main/docs/releases/v0.1.0.md)
 
-## 3. Core features
+> SheetProof v0.1.0 is being prepared for PyPI. This README does not claim that the package has
+> already been published there. Until publication is confirmed, use the source installation
+> above or clone the repository.
 
-- **Bounded workbook inspection:** sheet names/order/visibility, cells, raw values, formulas,
-  cached values, types, hidden rows and columns, merged cells, names, data validation, freeze
-  panes, table ranges, external-link indicators, VBA presence, and key style summaries.
-- **Structural diff:** added/deleted/reordered or newly hidden sheets, visibility, hidden rows
-  and columns, merges, names, validations, freeze panes, tables, external links, and VBA
-  presence changes.
-- **Semantic cell diff:** distinguishes numbers, text, dates, errors, blanks, formulas, type
-  changes, clearing, formula addition, and formula replacement.
-- **Formula analysis:** extracts A1 references for common functions, identifies reduced formula
-  ranges, retains unsupported formulas with `unsupported_formula_analysis`, and never evaluates
-  formula results.
-- **Formula-pattern review:** flags a fixed value or blank that breaks a nearby row/column copy
-  pattern and retains the neighboring formula evidence.
-- **Dependency impact:** current-sheet and cross-sheet cell/range references, direct upstream and
-  downstream cells, bounded downstream counts, path examples, critical-cell impact, cycles, and
-  truncation flags.
-- **YAML policy:** nine deterministic built-in rule types with `PASSED`, `FAILED`, `WARNING`,
-  `SKIPPED`, or `ERROR` results.
-- **Explainable risk:** configurable, deduplicated point contributions capped at 100.
-- **One report contract:** JSON, offline autoescaped HTML, CLI, web, and CI use `ReviewResult`.
-- **Safe local interfaces:** Typer CLI, bounded Streamlit uploads, and a read-only GitHub Actions
-  workflow. No workbook is uploaded by SheetProof and no API key is required.
+## How it works
 
-## 4. Quick start
+~~~mermaid
+flowchart LR
+    B["before.xlsx"] --> S["SheetProof"]
+    A["after.xlsx"] --> S
+    P["optional sheetproof.yml"] --> S
+    S --> D["Semantic diff"]
+    S --> F["Formula overwrite and pattern detection"]
+    S --> G["Bounded dependency impact"]
+    S --> R["Deterministic business rules"]
+    D --> E["Typed review evidence"]
+    F --> E
+    G --> E
+    R --> E
+    E --> J["JSON"]
+    E --> H["Offline HTML"]
+    E --> C["CLI / CI exit code"]
+~~~
 
-From a clone of this repository:
+Programs produce every finding, risk contribution, rule result, and exit code. AI-generated
+text is never used as validation evidence or as a merge decision.
 
-```bash
+## Why SheetProof
+
+An Excel workbook is a ZIP-based document, not a line-oriented source file. A normal Git diff
+cannot explain that a formula became a fixed value, a total range became shorter, a hidden sheet
+appeared, or a critical downstream cell may be affected.
+
+SheetProof converts workbook facts into stable, reviewable evidence:
+
+- semantic cell and workbook changes instead of raw XML noise;
+- explicit formula-overwrite, range-reduction, and copied-pattern findings;
+- bounded upstream and downstream dependency evidence;
+- project-specific YAML rules;
+- explainable, capped risk contributions;
+- one typed result shared by the CLI, reports, web page, Python API, and CI.
+
+SheetProof is a review aid. It does not prove that a workbook is correct and does not replace
+professional financial, security, legal, or operational review.
+
+## Key features
+
+- **Bounded non-executing parser:** reads <code>.xlsx</code> and <code>.xlsm</code> facts while
+  enforcing archive, cell, merge, formula-expansion, and graph limits.
+- **Semantic comparison:** classifies values, text, blanks, formulas, types, styles, names,
+  tables, validations, merges, hidden rows/columns, sheet visibility, VBA presence, and external
+  link indicators.
+- **Formula review:** detects formula replacement, range reduction, additions, and broken
+  row/column copy patterns without calculating formulas.
+- **Dependency impact:** reports direct and bounded downstream relationships, paths, cycles,
+  critical-cell impact, and truncation state.
+- **Strict YAML policy:** validates nine built-in deterministic rule types and rejects duplicate
+  keys, unknown fields, and invalid values.
+- **Explainable risk:** deduplicates named risk contributions and caps the total at 100.
+- **Portable reports:** writes structured JSON and self-contained, autoescaped offline HTML.
+- **Multiple adapters:** Typer CLI, source-checkout Streamlit page, public Python API, and a
+  read-only GitHub Action use the same review service.
+
+## Quick start
+
+Clone the repository to generate both reproducible demo cases:
+
+~~~bash
+git clone https://github.com/huangyikai05/SheetProof.git
+cd SheetProof
 python -m venv .venv
+source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e ".[dev,web]"
+python -m pip install -e .
 python examples/generate_demo_workbooks.py
 
-sheetproof compare \
-  examples/generated/before.xlsx \
-  examples/generated/after_safe.xlsx \
+sheetproof compare examples/generated/before.xlsx examples/generated/after_safe.xlsx \
   --config examples/sheetproof.example.yml \
   --json build/safe-review.json \
   --html build/safe-review.html
-```
+~~~
 
-On PowerShell, the multiline continuation character is a backtick rather than `\`; the same
-command can also be entered on one line. Open `build/safe-review.html` locally to inspect the
-self-contained report.
+The safe comparison exits <code>0</code> with <code>2/100 LOW</code>. The risky comparison below
+intentionally exits <code>1</code>; that exit is the expected gate result, not a crash:
 
-The demo generator also creates `after_risky.xlsx`. Comparing it is expected to return exit code
-`1` because it includes formula overwrites and policy violations:
-
-```bash
+~~~bash
 sheetproof compare examples/generated/before.xlsx examples/generated/after_risky.xlsx \
   --config examples/sheetproof.example.yml \
   --json build/risky-review.json \
   --html build/risky-review.html
-```
+~~~
 
-## 5. Installation
+PowerShell setup:
+
+~~~powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e .
+~~~
+
+Command Prompt setup:
+
+~~~bat
+py -3.11 -m venv .venv
+.\.venv\Scripts\activate.bat
+python -m pip install --upgrade pip
+python -m pip install -e .
+~~~
+
+If PowerShell blocks script activation, either use Command Prompt or run the virtual
+environment interpreter directly, for example
+<code>.\.venv\Scripts\python.exe -m pip install -e .</code>.
+
+## Installation
 
 Requirements:
 
-- Python 3.11 or newer;
-- a supported desktop/server platform for Python and openpyxl;
-- source access to this repository (the alpha is not documented here as a published PyPI
-  package).
+- Python 3.11 or newer (release CI currently tests Python 3.11 and 3.12);
+- a platform supported by Python and openpyxl;
+- local access to the workbooks being reviewed.
 
-Runtime-only editable installation:
+Until the PyPI release is confirmed, install from the public repository:
 
-```bash
-python -m pip install -e .
-```
+~~~bash
+python -m pip install "sheetproof @ git+https://github.com/huangyikai05/SheetProof.git@main"
+~~~
 
-Include the local web demo:
+From a clone:
 
-```bash
-python -m pip install -e ".[web]"
-```
+~~~bash
+python -m pip install .
+~~~
 
-Contributor installation:
+Optional local web interface:
 
-```bash
+~~~bash
+python -m pip install ".[web]"
+~~~
+
+Contributor environment:
+
+~~~bash
 python -m pip install -e ".[dev,web]"
-```
+~~~
 
-Docker is not required. Verify the installed command with `sheetproof version`.
+Verify the installed entry point with <code>sheetproof version</code>,
+<code>sheetproof --help</code>, and <code>sheetproof compare --help</code>.
 
-## 6. CLI usage
+After the package owner has completed and verified the PyPI release, the intended installation
+command is <code>python -m pip install sheetproof</code>.
 
-### Compare workbooks
+## CLI usage
 
-```bash
+### Compare two workbooks
+
+~~~bash
 sheetproof compare BEFORE.xlsx AFTER.xlsx \
   [--config sheetproof.yml] \
   [--json report.json] \
   [--html report.html] \
   [--fail-on LOW|MEDIUM|HIGH|CRITICAL]
-```
+~~~
 
-`--fail-on` overrides `block_risk_level` from the configuration. Without either an explicit
-flag or configuration file, the default gate is `HIGH`. A failed or errored rule always blocks.
-
-Exit codes are stable CI contracts:
-
-| Code | Meaning |
-| ---: | --- |
-| `0` | Review completed and did not meet a blocking condition. |
-| `1` | A rule failed/errored or risk reached the configured blocking level. Reports are still written. |
-| `2` | Workbook, path, or configuration input was invalid. |
-| `3` | An unexpected internal error occurred. Use `--debug` locally for a traceback. |
+The configuration controls the default blocking level. <code>--fail-on</code> overrides it.
+A failed or errored rule always blocks.
 
 ### Inspect one workbook
 
-```bash
+~~~bash
 sheetproof inspect workbook.xlsx
 sheetproof inspect workbook.xlsm --json build/snapshot.json
-```
+~~~
 
-Inspection records workbook facts; it does not calculate formulas or run macros.
+Inspection records workbook facts. It does not recalculate formulas or run VBA.
 
-### Validate policy and print version
+### Validate a policy
 
-```bash
+~~~bash
 sheetproof rules validate sheetproof.yml
 sheetproof version
-```
+~~~
 
-Use `sheetproof --help` or `sheetproof COMMAND --help` for complete option help.
+### Exit codes
 
-## 7. Web page
+| Code | Meaning |
+| ---: | --- |
+| 0 | Review completed without a configured blocking condition. |
+| 1 | Risk or a finding reached the blocking threshold, or a rule failed/errored. Reports are still written. |
+| 2 | Workbook, path, output, or policy input was invalid. |
+| 3 | An unexpected internal error occurred. Use <code>--debug</code> locally for a traceback. |
 
-Install the `web` extra and start Streamlit from the repository root:
+## Web interface
 
-```bash
+Install the web extra and start Streamlit from the repository root:
+
+~~~bash
 python -m pip install -e ".[web]"
 streamlit run web/app.py
-```
+~~~
 
-The page accepts before/after workbooks and an optional policy, then shows summary, high-risk,
-cell, formula-overwrite, structure, and rule tables with JSON/HTML downloads. Each upload is
-limited to 25 MiB. Files are copied to a private temporary directory for the review and removed
-afterward. The web page is only an adapter around `ReviewService`.
+The page accepts before/after workbooks and an optional policy, then provides summary tables and
+JSON/HTML downloads. Each upload is limited to 25 MiB. Files are copied to a private temporary
+directory for the review and removed afterward. The web page contains no alternate verdict logic.
 
-## 8. `sheetproof.yml`
+## YAML rules
 
-Configuration is optional and parsed with a duplicate-key-rejecting loader derived
-from PyYAML's `SafeLoader`, then validated by strict Pydantic models.
-Misspelled fields or invalid rule shapes are rejected.
+Configuration is optional. It is loaded with a duplicate-key-rejecting safe YAML loader and
+validated by strict Pydantic models.
 
-```yaml
+~~~yaml
 rules:
   - name: Cash-flow formulas must remain formulas
     type: formula_required
-    range: "现金流!B5:B40"
+    range: "现金流!B5:B20"
     severity: high
 
   - name: Forecast edits stay in the approved area
@@ -209,33 +276,7 @@ rules:
 
   - name: Do not add hidden sheets
     type: no_new_hidden_sheets
-
-  - name: Do not add VBA
-    type: no_macro_added
-    severity: critical
-
-  - name: Margin is plausible when a cached value exists
-    type: numeric_range
-    target: "利润表!F18"
-    min: 0
-    max: 0.6
-    severity: medium
-
-  - name: Profit sheet exists
-    type: required_sheet
-    sheet: "利润表"
-
-  - name: Scratch sheet is forbidden
-    type: forbidden_sheet
-    sheet: "临时导入"
-
-  - name: Keep the review focused
-    type: max_changed_cells
-    max: 25
-    failure_status: WARNING
-
-risk_weights:
-  formula_overwritten: 40
+    severity: high
 
 critical_cells:
   - "现金流!B22"
@@ -243,219 +284,135 @@ critical_cells:
 block_risk_level: HIGH
 max_dependency_depth: 10
 max_dependency_nodes: 10000
-```
+~~~
 
-For `numeric_range`, a formula cell without a cached result is `SKIPPED` with a reason; SheetProof
-does not calculate or invent the value. Set `failure_status: WARNING` on any rule that should report
-an advisory finding instead of a blocking `FAILED`; unexpected evaluator failures remain `ERROR`.
-See
-[`examples/sheetproof.example.yml`](examples/sheetproof.example.yml) for a complete demo policy.
+A numeric rule that targets a formula without a usable cached value is reported as
+<code>SKIPPED</code>; SheetProof never invents the value or pretends to emulate Excel.
+See [the complete demo policy](https://github.com/huangyikai05/SheetProof/blob/main/examples/sheetproof.example.yml).
 
-## 9. GitHub Actions
+## GitHub Actions
 
-The repository includes `.github/workflows/sheetproof.yml` and a reusable composite action in
-`action/action.yml`. The required workflow uses base-owned `pull_request_target`, an explicitly
-read-only `contents` token, no repository secrets, checkout with persisted credentials disabled,
-and no PR comment permission. Its trust boundary is deliberate: the current base commit is
-checked out to `.sheetproof-trusted` for the Action and Python implementation, while the
-base repository's generated `refs/pull/<number>/head` is checked out separately to
-`.sheetproof-pr` only as Git-object input. No pull-request program or workflow is executed.
+The repository provides:
 
-Minimal local-action usage after checkout:
+- a normal <code>CI</code> workflow for tests, Ruff, Mypy, and compilation on supported Python
+  versions;
+- a composite SheetProof action and a read-only workbook pull-request gate;
+- a release workflow prepared for PyPI Trusted Publishing.
 
-```yaml
-permissions:
-  contents: read
+The required workbook gate deliberately loads its implementation, helper, and policy from a
+separate trusted base checkout. Pull-request workbooks are treated as Git-object input; PR code
+is not imported or executed. Added or deleted workbooks are <code>UNREVIEWABLE</code> and block
+by default because a semantic comparison needs both sides. The action supports an explicit
+advisory mode for unpaired files.
 
-steps:
-  - name: Check out trusted implementation
-    uses: actions/checkout@v4
-    with:
-      ref: ${{ github.event.pull_request.base.sha }}
-      path: .sheetproof-trusted
-      fetch-depth: 1
-      persist-credentials: false
+The PyPI release workflow is preparation, not proof of publication. The repository owner must
+configure the <code>pypi</code> GitHub Environment and matching PyPI Trusted Publisher before a
+release can publish. No PyPI token belongs in the repository.
 
-  - name: Check out pull request objects as data only
-    uses: actions/checkout@v4
-    with:
-      repository: ${{ github.repository }}
-      ref: refs/pull/${{ github.event.pull_request.number }}/head
-      path: .sheetproof-pr
-      fetch-depth: 0
-      persist-credentials: false
+See [the composite action](https://github.com/huangyikai05/SheetProof/blob/main/action/action.yml)
+and [the workbook workflow](https://github.com/huangyikai05/SheetProof/blob/main/.github/workflows/sheetproof.yml).
 
-  - name: Review changed workbooks
-    uses: ./.sheetproof-trusted/action
-    with:
-      base-ref: ${{ github.event.pull_request.base.sha }}
-      head-ref: ${{ github.event.pull_request.head.sha }}
-      config-ref: ${{ github.event.pull_request.base.sha }}
-      repository: .sheetproof-pr
-      config: sheetproof.yml
-      fail-on: HIGH
-      output-dir: sheetproof-reports
-```
+### Action artifact privacy
 
-The trusted helper computes the unique merge base of the **current** trusted base and head, uses
-that merge base for change discovery and every before-side workbook blob, and follows both paths
-of a Git rename. This prevents new destination-branch commits from being misattributed to a
-behind-base pull request. It reads both sides directly from the data checkout's Git object
-database into controlled temporary filenames; it does not import Python from the PR checkout.
-The policy is independently read from `config-ref`, which defaults to the current `base-ref`, so a
-pull request cannot weaken its own gate by editing `sheetproof.yml`, and a recently updated base
-policy takes effect even when the PR fork point is older. To intentionally test a proposed policy,
-use a separate non-gating workflow; do not change `config-ref` to an untrusted PR SHA on a
-required check.
+SheetProof itself does not upload workbooks or telemetry. A GitHub Actions workflow may,
+however, upload generated JSON and HTML reports as artifacts. Those reports can contain derived
+workbook content such as cell addresses, formulas, before/after values, sheet names, external-link
+names, and rule evidence. Repository owners should treat report artifacts according to the source
+workbook's sensitivity, restrict repository and artifact access, choose an appropriate retention
+period, and avoid public CI for confidential workbooks.
 
-Action inputs are:
+## Example reports
 
-| Input | Default | Meaning |
-| --- | --- | --- |
-| `base-ref` | required | Current trusted base; its merge base with `head-ref` supplies before-side blobs. |
-| `head-ref` | `HEAD` | Head commit used for after-side workbook blobs. |
-| `repository` | `.` | Git checkout containing both commits; reports are written inside it. |
-| `config` | `sheetproof.yml` | Repository-relative policy path; empty disables the file. |
-| `config-ref` | `base-ref` | Trusted commit from which `config` is read. |
-| `fail-on` | `HIGH` | Risk level that blocks (`LOW`, `MEDIUM`, `HIGH`, or `CRITICAL`). |
-| `output-dir` | `sheetproof-reports` | New report directory relative to `repository`; the leaf must not exist. |
-| `allow-unpaired` | `false` | Advisory mode: report added, deleted, or otherwise unpaired workbooks as `SKIPPED` instead of blocking as `UNREVIEWABLE`. |
-| `python-version` | `3.11` | Python version selected by `actions/setup-python`. |
+The repository stores generators rather than proprietary workbook fixtures. Run
+<code>python examples/generate_demo_workbooks.py</code> to create:
 
-A newly added workbook has no base version and a deleted workbook has no head version; those
-cases are explicitly marked `UNREVIEWABLE` and block by default because a semantic comparison
-requires both sides. Rename-to/from a non-workbook is handled the same way. Set the Action's
-`allow-unpaired: true` only for advisory workflows to report them as `SKIPPED`. Multiple
-comparisons are aggregated: exit `1` blocks on findings or unreviewable changes,
-while input/internal errors preserve codes `2`/`3`.
+| Case | Risk | Evidence summary | Exit |
+| --- | --- | --- | ---: |
+| [Safe update](https://github.com/huangyikai05/SheetProof/blob/main/docs/demo-safe.md) | 2/100 LOW | 1 changed cell; no formula, structure, link, or blocking-rule finding | 0 |
+| [Risky update](https://github.com/huangyikai05/SheetProof/blob/main/docs/demo-risky.md) | 100/100 CRITICAL | 5 changed cells; 3 formula changes; 1 overwrite; 1 hidden sheet; 1 external link; 4 failed rules | 1 |
 
-Before analysis, the trusted helper rejects a pre-existing output leaf, a leaf symlink, and any
-symlink in its path, then creates the leaf itself. The workflow uploads only the directory path
-published by that helper, including when findings block the gate; it never uploads a static path
-that a PR could pre-seed. A missing trusted policy uses built-in defaults and reports that fact.
-The default workflow runs only when a PR changes an `.xlsx` or `.xlsm`.
+The commands write machine-readable JSON and a self-contained HTML report to <code>build/</code>.
+Generated reports are intentionally not presented as static golden verdicts; regenerate them
+from the synthetic source script and current deterministic implementation.
 
-## 10. JSON output
+## Python API
 
-Every interface is based on one `ReviewResult`. Top-level fields are:
+The supported top-level helper returns the same typed <code>ReviewResult</code> used by every
+interface:
 
-```json
-{
-  "tool_version": "0.1.0",
-  "reviewed_at": "2026-01-01T00:00:00Z",
-  "before_file": {},
-  "after_file": {},
-  "summary": {},
-  "structure_changes": [],
-  "cell_changes": [],
-  "formula_changes": [],
-  "dependency_impacts": [],
-  "rule_results": [],
-  "risk_factors": [],
-  "limitations": [],
-  "errors": []
-}
-```
+~~~python
+from sheetproof import compare_workbooks
 
-Each change contains a type, risk level, location, before/after facts or formulas, human-readable
-description, and evidence. Dependency entries expose limits and cycle/truncation state. Rule
-results include status, severity, reason, location, and evidence. Treat fields as typed evidence;
-do not parse the prose description to implement a gate.
+result = compare_workbooks(
+    before_path="before.xlsx",
+    after_path="after.xlsx",
+    config_path="sheetproof.yml",
+)
 
-## 11. Risk scoring
+print(result.summary.risk_score)
+print(result.summary.risk_level.value)
+for finding in result.formula_changes:
+    print(finding.location, finding.change_type)
+~~~
 
-Risk is deterministic and additive, with duplicate `(risk type, location)` findings counted once
-and the total capped at 100. Default contributions include:
+The helper performs deterministic review only. Callers should use typed fields and enum values,
+not parse human-readable descriptions to implement a gate.
 
-| Finding | Points |
-| --- | ---: |
-| VBA added | 40 |
-| External link added | 35 |
-| Formula overwritten/deleted | 30 |
-| Hidden sheet added | 20 |
-| Formula range reduced | 20 |
-| Formula changed | 15 |
-| Hidden rows/columns changed | 10 |
-| 25 or more changed cells | 10 |
-| Formula added | 8 |
-| Value/text/style changes | 2 / 1 / 1 |
+## Security model
 
-Bands are `LOW` 0–19, `MEDIUM` 20–49, `HIGH` 50–79, and `CRITICAL` 80–100.
-`risk_weights` can override named weights with integers from 0 through 100. Every applied item is
-returned in `risk_factors` with its points, location, description, and source evidence.
+- VBA presence is detected; VBA is never executed, decompiled, verified, or removed.
+- Formulas are read as text; they are never executed or recalculated.
+- External workbook links are recorded as evidence; they are never opened or fetched.
+- Workbook-controlled shell text, embedded objects, and commands are never executed.
+- YAML uses a safe loader with strict validation.
+- OOXML paths and resource budgets are validated before materialization.
+- HTML is autoescaped and contains no online CDN dependency.
+- Core findings and gate decisions come from deterministic program logic, never a language model.
 
-Risk scoring prioritizes review; it is not a probability, confidence score, or absolute verdict.
+Read [SECURITY.md](https://github.com/huangyikai05/SheetProof/blob/main/SECURITY.md) before
+processing untrusted inputs and use its private reporting process for vulnerabilities.
 
-## 12. Privacy and security
+## Privacy
 
-- Analysis is local and requires no account, API key, paid API, database, or cloud service.
-- SheetProof does not upload workbook contents or telemetry.
-- VBA is detected from package contents but never executed.
-- Formulas are read as text and are never executed or recalculated.
-- External workbook links are recorded but never opened or fetched.
-- The parser streams and validates the OOXML central directory before materializing it, then
-  enforces 100 MiB file, 512 MiB expanded-archive, 10,000 archive-entry, 1,000,000 materialized
-  cell, and 100,000-cell per-merge limits. ZIP64 and multi-disk packages are rejected.
-- HTML uses Jinja autoescaping and has no online CDN dependency.
-- The included PR workflow has read-only repository permission and does not auto-comment.
-- The PR workflow runs the Action, Python package, helper script, and policy from the base commit;
-  pull-request code and policy are not used to decide their own gate.
+Local CLI, Python, and Streamlit reviews require no account, API key, database, or cloud service.
+SheetProof does not upload workbook contents or emit telemetry. Files remain on the machine unless
+the user or an integration explicitly copies or uploads an output. In particular, review the
+[Action artifact privacy](#action-artifact-privacy) boundary before enabling CI for sensitive
+workbooks.
 
-An `.xlsx`/`.xlsm` can contain content outside SheetProof's current model. Do not treat a clean
-report as malware clearance. Use least-privilege execution and read [SECURITY.md](SECURITY.md)
-before processing untrusted inputs.
+## Known limitations
 
-## 13. Known limitations
+- SheetProof cannot fully simulate Excel's calculation engine. Cached values may be absent or
+  stale, and SheetProof never fabricates them.
+- Formula parsing is not a complete Excel grammar. Some complex formulas receive reference-level
+  analysis only; dynamic references such as <code>INDIRECT</code> cannot be reliably resolved.
+- VBA is detected only; macro behavior is not analyzed.
+- Charts, slicers, Power Query, data models, embedded objects, digital signatures,
+  conditional-formatting semantics, and every style detail are not fully compared.
+- ZIP64 and multi-disk OOXML packages are outside the current security profile.
+- External-link detection does not guarantee that every connection type is found.
+- Added/deleted workbook pairs are unreviewable by semantic diff and fail closed in the default
+  CI gate.
+- A low risk score does not prove correctness, and a high score does not prove malicious intent.
+  The score prioritizes human review; it is not a probability or professional audit conclusion.
 
-- **The current version cannot fully simulate Excel's calculation engine.** It does not
-  recalculate formulas; cached results may be missing or stale.
-- **Some complex formulas receive reference-level analysis only.** Unsupported constructs retain
-  their raw formula and are marked `unsupported_formula_analysis` rather than silently ignored.
-- Formula parsing is not a complete Excel grammar. Dynamic references such as `INDIRECT` cannot
-  be resolved reliably from text alone. Formula reference expansion is capped per formula and at
-  200,000 generated references per review; dependency traversal has separate depth/node bounds.
-- **VBA is detected only and is never executed.** SheetProof does not decompile, analyze, verify,
-  or remove macro code.
-- openpyxl does not preserve or expose every Excel feature. Charts, slicers, Power Query, data
-  models, embedded objects, digital signatures, conditional-formatting semantics, and every style
-  detail are not fully compared by this MVP.
-- ZIP64 and multi-disk OOXML packages are outside the MVP security profile even when their
-  logical workbook contents might otherwise be small.
-- External-link detection is evidence collection, not a guarantee that every possible link or
-  connection type was found.
-- GitHub CI semantically compares modified and renamed workbook pairs. Added/deleted workbooks
-  fail closed as `UNREVIEWABLE` by default because one side is absent; advisory workflows may set
-  `allow-unpaired: true`.
-- **SheetProof does not replace a professional financial audit, security scanner, or business
-  approval process.**
-- **The risk score is a review aid, not an absolute conclusion.** A low score does not prove
-  correctness, and a high score does not prove malicious intent.
+## Roadmap
 
-## 14. Roadmap
+See [ROADMAP.md](https://github.com/huangyikai05/SheetProof/blob/main/ROADMAP.md) for the public,
+non-date-bound roadmap. Proposed post-MVP work includes formula graph visualization, better
+formula parsing, optional PR comments, deterministic rule plugins, performance work, and
+carefully bounded evidence-explanation integrations. Roadmap items are proposals, not release
+promises.
 
-Potential post-MVP work, subject to design and tests:
+## Contributing
 
-- a more complete formula AST and richer formula-range explanations;
-- optional LibreOffice headless recalculation with explicit trust boundaries;
-- workbook history and batch review;
-- visual dependency graphs;
-- opt-in GitHub PR comments with tightly scoped permission;
-- custom deterministic Python rule plugins and reusable policy templates;
-- MCP and evidence-only AI explanation interfaces.
+Read [CONTRIBUTING.md](https://github.com/huangyikai05/SheetProof/blob/main/CONTRIBUTING.md) and
+[AGENTS.md](https://github.com/huangyikai05/SheetProof/blob/main/AGENTS.md). Core changes must
+include focused tests and preserve the rule that programs validate while AI may only explain
+evidence. Use synthetic minimal workbooks; never submit confidential, proprietary, or
+source-unknown Excel files.
 
-These items are not implemented promises. Accounts, billing, cloud file storage, and autonomous
-workbook modification are outside the current direction.
+## License
 
-## 15. Contributing
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md). Changes to parsing,
-diff logic, formulas, dependency analysis, built-in rules, scoring, or exit-code behavior must
-include tests. Use synthetic workbooks and never attach sensitive business data to an issue.
-
-Bug reports and focused feature proposals are welcome through the provided issue forms. Security
-reports follow [SECURITY.md](SECURITY.md). Pull requests should use the repository template and
-record the exact checks run.
-
-## 16. License
-
-SheetProof is available under the [MIT License](LICENSE).
+SheetProof is available under the
+[MIT License](https://github.com/huangyikai05/SheetProof/blob/main/LICENSE).
