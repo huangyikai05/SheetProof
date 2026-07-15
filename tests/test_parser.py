@@ -23,7 +23,7 @@ from tests.conftest import WorkbookFactory, add_vba_project
 def _replace_archive_member_bytes(
     path: Path,
     member: str,
-    old: bytes,
+    old: bytes | tuple[bytes, ...],
     new: bytes,
 ) -> None:
     with ZipFile(path) as source:
@@ -34,9 +34,13 @@ def _replace_archive_member_bytes(
     with ZipFile(rewritten, "w") as target:
         for info, data in entries:
             if info.filename == member:
-                updated = data.replace(old, new, 1)
-                replaced = updated != data
-                data = updated
+                candidates = (old,) if isinstance(old, bytes) else old
+                for candidate in candidates:
+                    updated = data.replace(candidate, new, 1)
+                    if updated != data:
+                        replaced = True
+                        data = updated
+                        break
             target.writestr(info, data)
     assert replaced is True
     rewritten.replace(path)
@@ -192,7 +196,7 @@ def test_parser_marks_available_formula_cache_explicitly(
     _replace_archive_member_bytes(
         path,
         "xl/worksheets/sheet1.xml",
-        b"<f>1+1</f><v></v>",
+        (b"<f>1+1</f><v></v>", b"<f>1+1</f><v/>", b"<f>1+1</f><v />"),
         b"<f>1+1</f><v>2</v>",
     )
 
@@ -398,7 +402,11 @@ def test_parser_rejects_xfe_cell_and_merged_range(
     _replace_archive_member_bytes(
         merge_path,
         "xl/worksheets/sheet1.xml",
-        b'<mergeCell ref="A2:B2"/>',
+        (
+            b'<mergeCell ref="A2:B2"/>',
+            b'<mergeCell ref="A2:B2" />',
+            b'<mergeCell ref="A2:B2"></mergeCell>',
+        ),
         b'<mergeCell ref="XFE1:XFE2"/>',
     )
 
