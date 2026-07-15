@@ -389,7 +389,52 @@ def _run_sheetproof(arguments: Sequence[str]) -> subprocess.CompletedProcess[str
 
 def _prepare_config(
     repo: Path,
-ëm¢G§²ÚîÆ­yßsource).suffix.lower()
+    policy_commit: str,
+    raw_config: str,
+    temp_root: Path,
+) -> tuple[Path | None, str]:
+    if not raw_config.strip():
+        return None, "No policy path configured; built-in defaults were used."
+    config_path = _validate_repo_path(raw_config.strip(), "configuration path")
+    if PurePosixPath(config_path).suffix.lower() not in CONFIG_SUFFIXES:
+        raise ReviewScriptError("configuration path must end in .yml or .yaml")
+    if _blob_entry(repo, policy_commit, config_path) is None:
+        return None, (
+            f"Policy `{config_path}` was not present at trusted commit "
+            f"`{policy_commit[:12]}`; built-in defaults were used."
+        )
+    destination = temp_root / "sheetproof-policy.yml"
+    _materialize_blob(repo, policy_commit, config_path, destination, max_bytes=1024 * 1024)
+    validation = _run_sheetproof(["rules", "validate", str(destination)])
+    if validation.returncode != 0:
+        code = validation.returncode if validation.returncode in {2, 3} else 2
+        raise ReviewScriptError(_command_detail(validation), exit_code=code)
+    return destination, (
+        f"Policy `{config_path}` from trusted commit `{policy_commit[:12]}` "
+        "was validated and applied."
+    )
+
+
+def _compare_change(
+    repo: Path,
+    base: str,
+    head: str,
+    change: GitChange,
+    index: int,
+    temp_root: Path,
+    output_dir: Path,
+    config_path: Path | None,
+    fail_on: str,
+) -> ReviewOutcome:
+    if change.path_error:
+        return ReviewOutcome("ERROR", change.display_path, 2, change.path_error)
+    before_source = change.before_path
+    after_source = change.after_path
+    if before_source is None or after_source is None:
+        raise ReviewScriptError("Internal comparison selection error", exit_code=3)
+
+    before_suffix = PurePosixPath(before_source).suffix.lower()
+    after_suffix = PurePosixPath(after_source).suffix.lower()
     before_file = temp_root / f"before-{index:03d}{before_suffix}"
     after_file = temp_root / f"after-{index:03d}{after_suffix}"
     _materialize_blob(repo, base, before_source, before_file)
