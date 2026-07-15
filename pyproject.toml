@@ -4,27 +4,29 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sheetproof"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Deterministic semantic review and CI for Excel workbook changes"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "SheetProof contributors" }]
 keywords = ["excel", "xlsx", "audit", "diff", "ci", "spreadsheet"]
 classifiers = [
   "Development Status :: 3 - Alpha",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: Office/Business :: Financial :: Spreadsheet",
 ]
 dependencies = [
+  "click>=8.3.3,<9",
   "Jinja2>=3.1.4,<4",
   "openpyxl>=3.1.5,<4",
   "pydantic>=2.8,<3",
+  "Pygments>=2.20,<3",
   "PyYAML>=6.0.2,<7",
-  "typer>=0.12.5,<1",
+  "typer>=0.26.8,<1",
 ]
 
 [project.optional-dependencies]
@@ -36,19 +38,32 @@ dev = [
   "ruff>=0.7,<1",
   "types-PyYAML>=6.0.12",
 ]
+release = [
+  "build>=1.2,<2",
+  "twine>=6,<7",
+]
 
 [project.urls]
 Homepage = "https://github.com/huangyikai05/SheetProof"
 Repository = "https://github.com/huangyikai05/SheetProof"
 Issues = "https://github.com/huangyikai05/SheetProof/issues"
+Changelog = "https://github.com/huangyikai05/SheetProof/blob/main/CHANGELOG.md"
 
 [project.scripts]
 sheetproof = "sheetproof.cli:app"
 
+[tool.setuptools]
+include-package-data = false
+
 [tool.setuptools.packages.find]
 include = ["sheetproof*"]
+namespaces = false
+
+[tool.setuptools.dynamic]
+version = { attr = "sheetproof._version.__version__" }
 
 [tool.setuptools.package-data]
+sheetproof = ["py.typed"]
 "sheetproof.reports" = ["templates/*.j2"]
 
 [tool.pytest.ini_options]
