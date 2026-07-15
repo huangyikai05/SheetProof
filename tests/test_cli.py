@@ -10,7 +10,7 @@ from openpyxl import Workbook
 from typer.testing import CliRunner
 
 from sheetproof.cli import app
-from tests.conftest import WorkbookFactory
+from tests.conftest import WorkbookFactory, add_vba_project
 
 runner = CliRunner()
 
@@ -165,6 +165,52 @@ def test_compare_command_writes_json_and_offline_html_reports(
     assert "cdn." not in html.lower()
     assert str(json_path.resolve()) in result.output
     assert str(html_path.resolve()) in result.output
+
+
+def test_compare_blocks_relocated_vba_project_end_to_end(
+    workbook_factory: WorkbookFactory,
+    tmp_path: Path,
+) -> None:
+    before = workbook_factory("macro-before.xlsx", _safe_before)
+    after = workbook_factory("macro-after.xlsx", _safe_before)
+    add_vba_project(after, part_name="xl/custom/project.bin")
+    config = tmp_path / "macro-policy.yml"
+    config.write_text(
+        "rules:\n  - name: No new macros\n    type: no_macro_added\n",
+        encoding="utf-8",
+    )
+    json_path = tmp_path / "macro-result.json"
+
+    result = runner.invoke(
+        app,
+        [
+            "compare",
+            str(before),
+            str(after),
+            "--config",
+            str(config),
+            "--json",
+            str(json_path),
+        ],
+    )
+
+    assert result.exit_code == 1, result.output
+    payload = json.loads(json_path.read_text(encoding="utf-8"))
+    assert payload["before_file"]["has_vba"] is False
+    assert payload["after_file"]["has_vba"] is True
+    assert payload["summary"]["macro_status_changed"] is True
+    macro_change = next(
+        change
+        for change in payload["structure_changes"]
+        if change["change_type"] == "macro_added"
+    )
+    assert macro_change["risk_level"] == "CRITICAL"
+    macro_rule = next(
+        rule for rule in payload["rule_results"] if rule["rule_type"] == "no_macro_added"
+    )
+    assert macro_rule["status"] == "FAILED"
+    assert macro_rule["evidence"]["macro_added"] is True
+    assert "macro_added" in {factor["risk_type"] for factor in payload["risk_factors"]}
 
 
 def test_inspect_and_rules_validate_commands(
