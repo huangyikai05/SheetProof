@@ -40,6 +40,7 @@ dev = [
 ]
 release = [
   "build>=1.2,<2",
+  "setuptools>=77",
   "twine>=6,<7",
 ]
 

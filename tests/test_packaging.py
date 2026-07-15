@@ -34,6 +34,7 @@ def test_pyproject_uses_canonical_dynamic_version_and_release_metadata() -> None
     assert "typer>=0.26.8,<1" in runtime_dependencies
     assert {item.split(">=", 1)[0] for item in project["optional-dependencies"]["release"]} == {
         "build",
+        "setuptools",
         "twine",
     }
     assert setuptools["packages"]["find"]["namespaces"] is False
