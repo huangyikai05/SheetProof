@@ -12,7 +12,7 @@ from zipfile import ZipFile
 
 import pytest
 
-from sheetproof import __version__
+from tabulint import __version__
 
 PROJECT_ROOT = Path(__file__).parents[1]
 
@@ -24,7 +24,7 @@ def test_pyproject_uses_canonical_dynamic_version_and_release_metadata() -> None
     setuptools = pyproject["tool"]["setuptools"]
     assert "version" not in project
     assert project["dynamic"] == ["version"]
-    assert setuptools["dynamic"]["version"]["attr"] == "sheetproof._version.__version__"
+    assert setuptools["dynamic"]["version"]["attr"] == "tabulint._version.__version__"
     assert project["license"] == "MIT"
     assert project["license-files"] == ["LICENSE"]
     assert project["urls"]["Changelog"].endswith("/CHANGELOG.md")
@@ -39,8 +39,8 @@ def test_pyproject_uses_canonical_dynamic_version_and_release_metadata() -> None
     }
     assert setuptools["packages"]["find"]["namespaces"] is False
     assert setuptools["include-package-data"] is False
-    assert "py.typed" in setuptools["package-data"]["sheetproof"]
-    assert "templates/*.j2" in setuptools["package-data"]["sheetproof.reports"]
+    assert "py.typed" in setuptools["package-data"]["tabulint"]
+    assert "templates/*.j2" in setuptools["package-data"]["tabulint.reports"]
 
 
 def test_fresh_build_contains_version_license_template_and_type_marker(tmp_path: Path) -> None:
@@ -68,7 +68,7 @@ def test_fresh_build_contains_version_license_template_and_type_marker(tmp_path:
         "docs",
         "examples",
         "scripts",
-        "sheetproof",
+        "tabulint",
         "tests",
         "web",
     )
@@ -107,8 +107,8 @@ def test_fresh_build_contains_version_license_template_and_type_marker(tmp_path:
         assert f"Version: {__version__}" in metadata
         assert "License-Expression: MIT" in metadata
         assert "Project-URL: Changelog," in metadata
-        assert "sheetproof/py.typed" in wheel_names
-        assert "sheetproof/reports/templates/report.html.j2" in wheel_names
+        assert "tabulint/py.typed" in wheel_names
+        assert "tabulint/reports/templates/report.html.j2" in wheel_names
         assert any(name.endswith(".dist-info/licenses/LICENSE") for name in wheel_names)
 
     with tarfile.open(sdists[0], mode="r:gz") as sdist:
@@ -124,8 +124,8 @@ def test_fresh_build_contains_version_license_template_and_type_marker(tmp_path:
         assert any(
             name.endswith("/scripts/review_changed_workbooks.py") for name in sdist_names
         )
-        assert any(name.endswith("/sheetproof/py.typed") for name in sdist_names)
+        assert any(name.endswith("/tabulint/py.typed") for name in sdist_names)
         assert any(
-            name.endswith("/sheetproof/reports/templates/report.html.j2")
+            name.endswith("/tabulint/reports/templates/report.html.j2")
             for name in sdist_names
         )

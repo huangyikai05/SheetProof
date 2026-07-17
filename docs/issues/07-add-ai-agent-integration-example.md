@@ -4,13 +4,13 @@ Suggested labels: `documentation`, `help wanted`
 
 ## Background
 
-An AI assistant can help a reviewer navigate SheetProof's structured evidence, but it must not
+An AI assistant can help a reviewer navigate Tabulint's structured evidence, but it must not
 inspect private workbooks by default, invent facts, change risk scores, or decide whether a workbook
 is correct. A narrowly scoped example would make that boundary concrete for integrators.
 
 ## Goal
 
-Document a provider-neutral integration in which deterministic SheetProof analysis runs first and
+Document a provider-neutral integration in which deterministic Tabulint analysis runs first and
 an optional agent receives only a bounded, sanitized report summary to explain cited evidence.
 
 ## Suggested implementation

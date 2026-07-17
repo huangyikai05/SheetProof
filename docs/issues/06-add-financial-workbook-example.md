@@ -11,7 +11,7 @@ recognizable while avoiding real company data and any claim of professional audi
 ## Goal
 
 Add a script-generated, fully synthetic financial workbook pair plus rules and documentation that
-demonstrate existing SheetProof behavior end to end.
+demonstrate existing Tabulint behavior end to end.
 
 ## Suggested implementation
 

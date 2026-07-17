@@ -1,0 +1,66 @@
+name: Tabulint
+
+on:
+  # This event deliberately loads the workflow from the destination branch.
+  # The job has a read-only token, references no repository secrets, and never
+  # executes code from the pull-request checkout.
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "**/*.xlsx"
+      - "**/*.xlsm"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tabulint-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review-workbooks:
+    name: Review changed workbooks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out trusted Tabulint implementation
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .tabulint-trusted
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check out pull request objects as data only
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: ${{ github.repository }}
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
+          path: .tabulint-pr
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run Tabulint
+        id: tabulint
+        uses: ./.tabulint-trusted/action
+        with:
+          base-ref: ${{ github.event.pull_request.base.sha }}
+          head-ref: ${{ github.event.pull_request.head.sha }}
+          config-ref: ${{ github.event.pull_request.base.sha }}
+          repository: .tabulint-pr
+          config: tabulint.yml
+          fail-on: HIGH
+          output-dir: tabulint-reports
+          python-version: "3.11"
+
+      - name: Upload Tabulint reports
+        # A PR-provided directory is never uploaded. The trusted helper exposes
+        # this output only after atomically creating a previously absent leaf.
+        if: ${{ always() && steps.tabulint.outputs.report-directory != '' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: tabulint-pr-${{ github.event.pull_request.number }}
+          path: .tabulint-pr/${{ steps.tabulint.outputs.report-directory }}/
+          if-no-files-found: error
+          retention-days: 14

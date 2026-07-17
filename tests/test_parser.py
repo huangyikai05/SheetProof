@@ -15,9 +15,9 @@ from openpyxl.workbook.defined_name import DefinedName
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.table import Table
 
-from sheetproof.exceptions import WorkbookParseError
-from sheetproof.models import CellKind, FormulaCalculationStatus
-from sheetproof.parser.workbook import WorkbookParser
+from tabulint.exceptions import WorkbookParseError
+from tabulint.models import CellKind, FormulaCalculationStatus
+from tabulint.parser.workbook import WorkbookParser
 from tests.conftest import WorkbookFactory, add_vba_project
 
 _CONTENT_TYPES_NAMESPACE = (
@@ -26,8 +26,8 @@ _CONTENT_TYPES_NAMESPACE = (
 _MARKUP_COMPATIBILITY_NAMESPACE = (
     "http://schemas.openxmlformats.org/markup-compatibility/2006"
 )
-_TEST_EXTENSION_NAMESPACE = "urn:sheetproof:test-extension"
-_OTHER_EXTENSION_NAMESPACE = "urn:sheetproof:other-extension"
+_TEST_EXTENSION_NAMESPACE = "urn:tabulint:test-extension"
+_OTHER_EXTENSION_NAMESPACE = "urn:tabulint:other-extension"
 _VBA_RELATIONSHIP_TYPE = (
     "http://schemas.microsoft.com/office/2006/relationships/vbaProject"
 )
@@ -250,7 +250,7 @@ def test_parser_detects_inert_vba_package_member(
     assert snapshot.file.has_vba is True
     assert snapshot.file.suffix == ".xlsm"
     with ZipFile(path) as archive:
-        assert archive.read("xl/vbaProject.bin") == b"SheetProof test VBA marker"
+        assert archive.read("xl/vbaProject.bin") == b"Tabulint test VBA marker"
 
 
 def test_parser_detects_relocated_vba_project_from_opc_metadata(
@@ -344,7 +344,7 @@ def test_parser_rejects_incomplete_vba_opc_metadata(
     def unexpected_load(*args: object, **kwargs: object) -> None:
         raise AssertionError(f"openpyxl load should not run: {args!r} {kwargs!r}")
 
-    monkeypatch.setattr("sheetproof.parser.workbook.load_workbook", unexpected_load)
+    monkeypatch.setattr("tabulint.parser.workbook.load_workbook", unexpected_load)
     with pytest.raises(WorkbookParseError, match=message):
         WorkbookParser().parse(path)
 
@@ -383,7 +383,7 @@ def test_parser_rejects_unsafe_vba_relationship_targets(
     def unexpected_load(*args: object, **kwargs: object) -> None:
         raise AssertionError(f"openpyxl load should not run: {args!r} {kwargs!r}")
 
-    monkeypatch.setattr("sheetproof.parser.workbook.load_workbook", unexpected_load)
+    monkeypatch.setattr("tabulint.parser.workbook.load_workbook", unexpected_load)
     with pytest.raises(WorkbookParseError, match=message):
         WorkbookParser().parse(path)
 
@@ -641,7 +641,7 @@ def test_archive_entry_limit_rejects_ordinary_zip_before_openpyxl(
     def unexpected_load(*args: object, **kwargs: object) -> None:
         raise AssertionError(f"openpyxl load should not run: {args!r} {kwargs!r}")
 
-    monkeypatch.setattr("sheetproof.parser.workbook.load_workbook", unexpected_load)
+    monkeypatch.setattr("tabulint.parser.workbook.load_workbook", unexpected_load)
 
     with pytest.raises(
         WorkbookParseError,
@@ -669,7 +669,7 @@ def test_archive_entry_limit_ignores_forged_eocd_count(
     def unexpected_load(*args: object, **kwargs: object) -> None:
         raise AssertionError(f"openpyxl load should not run: {args!r} {kwargs!r}")
 
-    monkeypatch.setattr("sheetproof.parser.workbook.load_workbook", unexpected_load)
+    monkeypatch.setattr("tabulint.parser.workbook.load_workbook", unexpected_load)
     with pytest.raises(
         WorkbookParseError,
         match="more than the configured 10 entries",
@@ -709,7 +709,7 @@ def test_large_merged_range_is_rejected_during_archive_preflight(
     def unexpected_load(*args: object, **kwargs: object) -> None:
         raise AssertionError(f"openpyxl load should not run: {args!r} {kwargs!r}")
 
-    monkeypatch.setattr("sheetproof.parser.workbook.load_workbook", unexpected_load)
+    monkeypatch.setattr("tabulint.parser.workbook.load_workbook", unexpected_load)
 
     with pytest.raises(WorkbookParseError, match="configured limit is 100"):
         WorkbookParser(max_cells=10_000, max_merged_cells=100).parse(path)
@@ -805,7 +805,7 @@ def test_relocated_worksheet_xml_still_receives_cell_and_merge_preflight(
     def unexpected_load(*args: object, **kwargs: object) -> None:
         raise AssertionError(f"openpyxl load should not run: {args!r} {kwargs!r}")
 
-    monkeypatch.setattr("sheetproof.parser.workbook.load_workbook", unexpected_load)
+    monkeypatch.setattr("tabulint.parser.workbook.load_workbook", unexpected_load)
 
     with pytest.raises(WorkbookParseError, match="out-of-bounds cell: 'XFE1'"):
         WorkbookParser().parse(cell_path)

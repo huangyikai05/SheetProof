@@ -1,4 +1,4 @@
-"""Local Streamlit interface for the SheetProof review service."""
+"""Local Streamlit interface for the Tabulint review service."""
 
 from __future__ import annotations
 
@@ -11,11 +11,11 @@ from typing import Protocol
 
 import streamlit as st
 
-from sheetproof.exceptions import SheetProofError
-from sheetproof.models import ReviewResult, RiskLevel, RuleStatus, Severity
-from sheetproof.reports.html_report import render_html
-from sheetproof.reports.json_report import render_json
-from sheetproof.services.review_service import ReviewService
+from tabulint.exceptions import TabulintError
+from tabulint.models import ReviewResult, RiskLevel, RuleStatus, Severity
+from tabulint.reports.html_report import render_html
+from tabulint.reports.json_report import render_json
+from tabulint.services.review_service import ReviewService
 
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 COPY_CHUNK_BYTES = 1024 * 1024
@@ -207,11 +207,11 @@ def _run_review(
         else None
     )
 
-    temp_root = Path(tempfile.mkdtemp(prefix="sheetproof-web-"))
+    temp_root = Path(tempfile.mkdtemp(prefix="tabulint-web-"))
     try:
         before_path = temp_root / f"before{before_suffix}"
         after_path = temp_root / f"after{after_suffix}"
-        config_path = temp_root / f"sheetproof{config_suffix}" if config_suffix else None
+        config_path = temp_root / f"tabulint{config_suffix}" if config_suffix else None
         _save_upload(before_upload, before_path)
         _save_upload(after_upload, after_path)
         if config_upload is not None and config_path is not None:
@@ -224,14 +224,14 @@ def _run_review(
         )
         json_report = render_json(result)
         html_report = render_html(result)
-        st.session_state["sheetproof_result"] = result
-        st.session_state["sheetproof_json"] = json_report
-        st.session_state["sheetproof_html"] = html_report
+        st.session_state["tabulint_result"] = result
+        st.session_state["tabulint_json"] = json_report
+        st.session_state["tabulint_html"] = html_report
     finally:
         try:
             shutil.rmtree(temp_root)
         except OSError as exc:
-            LOGGER.exception("Unable to remove SheetProof upload directory: %s", temp_root)
+            LOGGER.exception("Unable to remove Tabulint upload directory: %s", temp_root)
             raise UploadValidationError(
                 f"审查临时文件未能删除, 请手动移除: {temp_root}"
             ) from exc
@@ -280,22 +280,22 @@ def _render_result(result: ReviewResult, json_report: str, html_report: str) -> 
     download_json.download_button(
         "下载 JSON 报告",
         data=json_report.encode("utf-8"),
-        file_name="sheetproof-report.json",
+        file_name="tabulint-report.json",
         mime="application/json",
         use_container_width=True,
     )
     download_html.download_button(
         "下载 HTML 报告",
         data=html_report.encode("utf-8"),
-        file_name="sheetproof-report.html",
+        file_name="tabulint-report.html",
         mime="text/html",
         use_container_width=True,
     )
 
 
 def main() -> None:
-    st.set_page_config(page_title="SheetProof", page_icon="🔎", layout="wide")
-    st.title("SheetProof")
+    st.set_page_config(page_title="Tabulint", page_icon="🔎", layout="wide")
+    st.title("Tabulint")
     st.caption("本地、确定性的 Excel 变更审查。文件不会上传到第三方, 也不会执行宏或外部链接。")
 
     before_column, after_column = st.columns(2)
@@ -312,7 +312,7 @@ def main() -> None:
             key="after_workbook",
         )
     config_upload = st.file_uploader(
-        "可选规则配置 (sheetproof.yml)",
+        "可选规则配置 (tabulint.yml)",
         type=["yml", "yaml"],
         key="rule_config",
     )
@@ -324,21 +324,21 @@ def main() -> None:
         disabled=before_upload is None or after_upload is None,
     )
     if start and before_upload is not None and after_upload is not None:
-        for key in ("sheetproof_result", "sheetproof_json", "sheetproof_html"):
+        for key in ("tabulint_result", "tabulint_json", "tabulint_html"):
             st.session_state.pop(key, None)
         try:
             with st.spinner("正在进行确定性审查……"):
                 _run_review(before_upload, after_upload, config_upload)
             st.success("审查完成, 临时文件已清理。")
-        except (UploadValidationError, SheetProofError) as exc:
+        except (UploadValidationError, TabulintError) as exc:
             st.error(str(exc))
         except Exception:
-            LOGGER.exception("Unexpected SheetProof web review failure")
+            LOGGER.exception("Unexpected Tabulint web review failure")
             st.error("审查遇到内部错误。请查看运行 Streamlit 的终端日志。")
 
-    result = st.session_state.get("sheetproof_result")
-    json_report = st.session_state.get("sheetproof_json")
-    html_report = st.session_state.get("sheetproof_html")
+    result = st.session_state.get("tabulint_result")
+    json_report = st.session_state.get("tabulint_json")
+    html_report = st.session_state.get("tabulint_html")
     if isinstance(result, ReviewResult) and isinstance(json_report, str) and isinstance(
         html_report, str
     ):

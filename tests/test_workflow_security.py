@@ -48,16 +48,16 @@ def test_release_publish_job_uses_trusted_publishing_only() -> None:
 
 
 def test_pull_request_gate_keeps_head_checkout_as_data_only() -> None:
-    workflow = (ROOT / ".github" / "workflows" / "sheetproof.yml").read_text(
+    workflow = (ROOT / ".github" / "workflows" / "tabulint.yml").read_text(
         encoding="utf-8"
     )
 
     assert "pull_request_target:" in workflow
     assert "contents: read" in workflow
     assert "persist-credentials: false" in workflow
-    assert "path: .sheetproof-trusted" in workflow
-    assert "path: .sheetproof-pr" in workflow
-    assert "uses: ./.sheetproof-trusted/action" in workflow
+    assert "path: .tabulint-trusted" in workflow
+    assert "path: .tabulint-pr" in workflow
+    assert "uses: ./.tabulint-trusted/action" in workflow
     assert re.search(r"\$\{\{\s*secrets\.", workflow) is None
 
 

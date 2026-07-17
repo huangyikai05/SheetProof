@@ -13,7 +13,7 @@ The generator copies <code>before.xlsx</code> and changes one approved forecast 
 
 The cell is inside the policy's approved input area, <code>预测!D5:H30</code>.
 
-## What SheetProof detected
+## What Tabulint detected
 
 The current deterministic review produces:
 
@@ -29,7 +29,7 @@ The current deterministic review produces:
 | CLI exit code | **0** |
 
 The numeric-range rule for <code>利润表!F18</code> is skipped because the formula has no usable
-cached value. That limitation is explicit: SheetProof does not recalculate or invent a value.
+cached value. That limitation is explicit: Tabulint does not recalculate or invent a value.
 
 ## Why the score is low
 
@@ -41,13 +41,13 @@ Low risk means “prioritize less review,” not “proved correct.”
 
 ## Reproduce it
 
-From a repository clone with SheetProof installed:
+From a repository clone with Tabulint installed:
 
 ~~~bash
 python examples/generate_demo_workbooks.py
 
-sheetproof compare examples/generated/before.xlsx examples/generated/after_safe.xlsx \
-  --config examples/sheetproof.example.yml \
+tabulint compare examples/generated/before.xlsx examples/generated/after_safe.xlsx \
+  --config examples/tabulint.example.yml \
   --json build/safe-review.json \
   --html build/safe-review.html
 ~~~

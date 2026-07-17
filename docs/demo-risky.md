@@ -21,7 +21,7 @@ The generator creates all three workbooks locally:
 python examples/generate_demo_workbooks.py
 ~~~
 
-## What SheetProof detected
+## What Tabulint detected
 
 | Metric | Result |
 | --- | --- |
@@ -61,8 +61,8 @@ The score is an explainable review priority, not a probability and not proof of 
 ## Reproduce it
 
 ~~~bash
-sheetproof compare examples/generated/before.xlsx examples/generated/after_risky.xlsx \
-  --config examples/sheetproof.example.yml \
+tabulint compare examples/generated/before.xlsx examples/generated/after_risky.xlsx \
+  --config examples/tabulint.example.yml \
   --json build/risky-review.json \
   --html build/risky-review.html
 ~~~
@@ -102,7 +102,7 @@ dependency, limitation, and risk evidence. The HTML is self-contained and autoes
 
 ## External-link safety boundary
 
-The workbook package contains a detectable reference to <code>external.xlsx</code>. SheetProof
+The workbook package contains a detectable reference to <code>external.xlsx</code>. Tabulint
 records the link name from local workbook metadata but does not resolve, open, download, or
 calculate the external workbook.
 

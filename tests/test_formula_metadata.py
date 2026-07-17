@@ -5,10 +5,10 @@ from __future__ import annotations
 from openpyxl import Workbook
 from openpyxl.worksheet.formula import ArrayFormula, DataTableFormula
 
-from sheetproof.diff.workbook_diff import WorkbookDiffer
-from sheetproof.models import CellKind, RiskLevel
-from sheetproof.parser.formulas import FormulaParser
-from sheetproof.parser.workbook import WorkbookParser
+from tabulint.diff.workbook_diff import WorkbookDiffer
+from tabulint.models import CellKind, RiskLevel
+from tabulint.parser.formulas import FormulaParser
+from tabulint.parser.workbook import WorkbookParser
 from tests.conftest import WorkbookConfigurator, WorkbookFactory
 
 

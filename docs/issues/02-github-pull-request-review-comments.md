@@ -28,7 +28,7 @@ without weakening the existing read-only gate or introducing an alternate verdic
 ## Acceptance criteria
 
 - [ ] A security design documents trust boundaries before write permissions are introduced.
-- [ ] The existing read-only SheetProof gate remains usable without comment permissions.
+- [ ] The existing read-only Tabulint gate remains usable without comment permissions.
 - [ ] The comment is derived from validated report fields and matches the CLI/JSON verdict.
 - [ ] Re-running a PR updates one marked comment and cannot overwrite human comments.
 - [ ] Tests cover Markdown injection, oversized evidence, forks, missing reports, and API failures.

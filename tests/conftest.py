@@ -49,7 +49,7 @@ def workbook_factory(tmp_path: Path) -> WorkbookFactory:
 
 def add_vba_project(
     path: Path,
-    payload: bytes = b"SheetProof test VBA marker",
+    payload: bytes = b"Tabulint test VBA marker",
     *,
     part_name: str = "xl/vbaProject.bin",
     relationship_target: str | None = None,

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from sheetproof.models import CellChange, FormulaChange, RiskLevel, StructureChange
-from sheetproof.risk.scorer import MANY_CELLS_THRESHOLD, RiskScorer, risk_level_for_score
+from tabulint.models import CellChange, FormulaChange, RiskLevel, StructureChange
+from tabulint.risk.scorer import MANY_CELLS_THRESHOLD, RiskScorer, risk_level_for_score
 
 
 def _structure(change_type: str, location: str) -> StructureChange:

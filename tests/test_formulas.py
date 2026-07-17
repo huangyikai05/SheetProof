@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from sheetproof.parser.formulas import (
+from tabulint.parser.formulas import (
     FormulaParser,
     formula_pattern,
     normalise_coordinate,

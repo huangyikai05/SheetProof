@@ -3,7 +3,7 @@
 
 The script is intentionally a thin CI adapter. It discovers Git changes, reads
 the exact blobs from each commit into controlled temporary filenames, invokes
-SheetProof's public CLI, and aggregates reports and exit codes. It never checks
+Tabulint's public CLI, and aggregates reports and exit codes. It never checks
 out a workbook path supplied by a pull request.
 """
 
@@ -30,7 +30,7 @@ SAFE_REF_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,255}")
 
 
 class ReviewScriptError(RuntimeError):
-    """Expected orchestration error carrying a SheetProof-compatible exit code."""
+    """Expected orchestration error carrying a Tabulint-compatible exit code."""
 
     def __init__(self, message: str, exit_code: int = 2) -> None:
         super().__init__(message)
@@ -360,12 +360,12 @@ def _artifact_prefix(index: int, change: GitChange) -> str:
 
 def _command_detail(completed: subprocess.CompletedProcess[str]) -> str:
     text = (completed.stderr or completed.stdout or "").strip()
-    return text[:2000] or f"SheetProof exited with code {completed.returncode}"
+    return text[:2000] or f"Tabulint exited with code {completed.returncode}"
 
 
-def _run_sheetproof(arguments: Sequence[str]) -> subprocess.CompletedProcess[str]:
+def _run_tabulint(arguments: Sequence[str]) -> subprocess.CompletedProcess[str]:
     # Never execute the CLI with the pull-request checkout as the current directory:
-    # an untrusted ``sheetproof`` package there would shadow the trusted installation.
+    # an untrusted ``tabulint`` package there would shadow the trusted installation.
     trusted_source = Path(__file__).resolve().parents[1]
     environment = os.environ.copy()
     environment["PYTHONUTF8"] = "1"
@@ -374,7 +374,7 @@ def _run_sheetproof(arguments: Sequence[str]) -> subprocess.CompletedProcess[str
     environment.pop("PYTHONHOME", None)
     try:
         return subprocess.run(
-            [sys.executable, "-m", "sheetproof", *arguments],
+            [sys.executable, "-m", "tabulint", *arguments],
             cwd=trusted_source,
             env=environment,
             text=True,
@@ -384,7 +384,7 @@ def _run_sheetproof(arguments: Sequence[str]) -> subprocess.CompletedProcess[str
             check=False,
         )
     except OSError as exc:
-        raise ReviewScriptError(f"Unable to run SheetProof: {exc}", exit_code=3) from exc
+        raise ReviewScriptError(f"Unable to run Tabulint: {exc}", exit_code=3) from exc
 
 
 def _prepare_config(
@@ -403,9 +403,9 @@ def _prepare_config(
             f"Policy `{config_path}` was not present at trusted commit "
             f"`{policy_commit[:12]}`; built-in defaults were used."
         )
-    destination = temp_root / "sheetproof-policy.yml"
+    destination = temp_root / "tabulint-policy.yml"
     _materialize_blob(repo, policy_commit, config_path, destination, max_bytes=1024 * 1024)
-    validation = _run_sheetproof(["rules", "validate", str(destination)])
+    validation = _run_tabulint(["rules", "validate", str(destination)])
     if validation.returncode != 0:
         code = validation.returncode if validation.returncode in {2, 3} else 2
         raise ReviewScriptError(_command_detail(validation), exit_code=code)
@@ -456,7 +456,7 @@ def _compare_change(
     ]
     if config_path is not None:
         command.extend(["--config", str(config_path)])
-    completed = _run_sheetproof(command)
+    completed = _run_tabulint(command)
     exit_code = completed.returncode if completed.returncode in {0, 1, 2, 3} else 3
 
     if exit_code not in {0, 1} or not json_path.is_file() or not html_path.is_file():
@@ -571,7 +571,7 @@ def _summary_markdown(
     skipped = sum(outcome.status == "SKIPPED" for outcome in outcomes)
     errors = sum(outcome.status == "ERROR" for outcome in outcomes)
     lines = [
-        "# SheetProof workbook review",
+        "# Tabulint workbook review",
         "",
         f"Trusted base `{_markdown(trusted_base[:12])}` · "
         f"Merge base `{_markdown(comparison_base[:12])}` · "
@@ -696,12 +696,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--config",
-        default="sheetproof.yml",
+        default="tabulint.yml",
         help="Optional repository-relative policy path from --config-ref; empty disables it.",
     )
     parser.add_argument(
         "--output-dir",
-        default="sheetproof-reports",
+        default="tabulint-reports",
         help="New report directory inside the repository; it must not already exist.",
     )
     parser.add_argument(
@@ -729,7 +729,7 @@ def run(arguments: argparse.Namespace) -> int:
     outcomes: list[ReviewOutcome] = []
     config_note = "Policy preparation did not complete."
 
-    with tempfile.TemporaryDirectory(prefix="sheetproof-ci-") as temp_name:
+    with tempfile.TemporaryDirectory(prefix="tabulint-ci-") as temp_name:
         temp_root = Path(temp_name)
         try:
             config_path, config_note = _prepare_config(
@@ -810,7 +810,7 @@ def run(arguments: argparse.Namespace) -> int:
     _append_file_from_environment("GITHUB_STEP_SUMMARY", summary)
     _write_action_outputs(output_dir, repo, outcomes, exit_code)
     print(summary)
-    print(f"SheetProof reports: {summary_path}")
+    print(f"Tabulint reports: {summary_path}")
     return exit_code
 
 
@@ -819,19 +819,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         return run(arguments)
     except ReviewScriptError as exc:
-        message = f"SheetProof CI orchestration failed: {exc}"
+        message = f"Tabulint CI orchestration failed: {exc}"
         print(message, file=sys.stderr)
         _append_file_from_environment(
             "GITHUB_STEP_SUMMARY",
-            f"# SheetProof workbook review\n\n**ERROR:** {_markdown(message)}\n",
+            f"# Tabulint workbook review\n\n**ERROR:** {_markdown(message)}\n",
         )
         return exc.exit_code
     except Exception as exc:  # defensive boundary for a CI-facing script
-        message = f"SheetProof CI orchestration failed internally ({type(exc).__name__}): {exc}"
+        message = f"Tabulint CI orchestration failed internally ({type(exc).__name__}): {exc}"
         print(message, file=sys.stderr)
         _append_file_from_environment(
             "GITHUB_STEP_SUMMARY",
-            f"# SheetProof workbook review\n\n**ERROR:** {_markdown(message)}\n",
+            f"# Tabulint workbook review\n\n**ERROR:** {_markdown(message)}\n",
         )
         return 3
 

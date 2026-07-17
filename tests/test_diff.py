@@ -10,11 +10,11 @@ from openpyxl.workbook.defined_name import DefinedName
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.table import Table
 
-from sheetproof.diff.workbook_diff import WorkbookDiffer
-from sheetproof.models import CellKind, RiskLevel, RuleSpec, RuleStatus, SheetProofConfig
-from sheetproof.parser.workbook import WorkbookParser
-from sheetproof.risk.scorer import RiskScorer
-from sheetproof.rules.engine import RuleEngine
+from tabulint.diff.workbook_diff import WorkbookDiffer
+from tabulint.models import CellKind, RiskLevel, RuleSpec, RuleStatus, TabulintConfig
+from tabulint.parser.workbook import WorkbookParser
+from tabulint.risk.scorer import RiskScorer
+from tabulint.rules.engine import RuleEngine
 from tests.conftest import WorkbookFactory, add_vba_project
 
 
@@ -236,7 +236,7 @@ def test_added_and_deleted_sheet_contents_feed_diffs_and_change_rules(
         "Deleted!B1": "formula_deleted",
     }
 
-    config = SheetProofConfig(
+    config = TabulintConfig(
         rules=[
             RuleSpec(
                 name="Only Main may change",

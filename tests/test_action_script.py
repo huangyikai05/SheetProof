@@ -73,8 +73,8 @@ def test_diverged_pull_request_uses_merge_base_for_discovery_and_before_blob(
     repo = tmp_path / "repo"
     repo.mkdir()
     _git(repo, "init", "-b", "main")
-    _git(repo, "config", "user.name", "SheetProof tests")
-    _git(repo, "config", "user.email", "sheetproof@example.invalid")
+    _git(repo, "config", "user.name", "Tabulint tests")
+    _git(repo, "config", "user.email", "tabulint@example.invalid")
 
     workbook = repo / "forecast.xlsx"
     workbook.write_bytes(b"common ancestor workbook")
@@ -173,14 +173,14 @@ def test_markdown_escapes_link_image_formatting_and_table_syntax() -> None:
 
 def test_required_workflow_is_base_owned_and_uploads_only_trusted_output() -> None:
     workflow = (
-        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "sheetproof.yml"
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "tabulint.yml"
     ).read_text(encoding="utf-8")
 
     assert "pull_request_target:" in workflow
     assert "\n  pull_request:\n" not in workflow
     assert "permissions:\n  contents: read" in workflow
     assert "secrets." not in workflow
-    assert "uses: ./.sheetproof-trusted/action" in workflow
+    assert "uses: ./.tabulint-trusted/action" in workflow
     assert "ref: refs/pull/${{ github.event.pull_request.number }}/head" in workflow
-    assert "steps.sheetproof.outputs.report-directory != ''" in workflow
-    assert "path: .sheetproof-pr/${{ steps.sheetproof.outputs.report-directory }}/" in workflow
+    assert "steps.tabulint.outputs.report-directory != ''" in workflow
+    assert "path: .tabulint-pr/${{ steps.tabulint.outputs.report-directory }}/" in workflow

@@ -12,8 +12,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: SheetProof version or commit
-      description: Output of `sheetproof version` and, when relevant, the commit SHA.
+      label: Tabulint version or commit
+      description: Output of `tabulint version` and, when relevant, the commit SHA.
       placeholder: 0.1.0 / abc1234
     validations:
       required: true
@@ -48,7 +48,7 @@ body:
       description: Include exact commands and a minimal synthetic workbook generator when possible.
       placeholder: |
         1. Create a workbook with ...
-        2. Run `sheetproof compare ...`
+        2. Run `tabulint compare ...`
         3. Observe ...
     validations:
       required: true

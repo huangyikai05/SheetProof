@@ -16,7 +16,7 @@ actually run.
 ```text
 pytest
 ruff check .
-mypy sheetproof
+mypy tabulint
 ```
 
 ## Local demonstration
@@ -36,4 +36,4 @@ State unsupported inputs, formula-analysis limits, resource bounds, and follow-u
 - [ ] Reports preserve evidence and escape workbook-controlled content.
 - [ ] README/config examples and `CHANGELOG.md` match implemented behavior.
 - [ ] Tests use synthetic workbooks and contain no secrets or private data.
-- [ ] `pytest`, `ruff check .`, and `mypy sheetproof` were run, or failures are explained above.
+- [ ] `pytest`, `ruff check .`, and `mypy tabulint` were run, or failures are explained above.

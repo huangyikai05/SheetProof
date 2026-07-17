@@ -4,7 +4,7 @@ Suggested labels: `enhancement`, `help wanted`
 
 ## Background
 
-SheetProof already builds a bounded dependency graph and reports deterministic impact evidence.
+Tabulint already builds a bounded dependency graph and reports deterministic impact evidence.
 That evidence is currently easier to inspect as structured data than as a relationship map. A
 small visual graph would help reviewers see which changed formula feeds each impacted cell without
 changing the review verdict.

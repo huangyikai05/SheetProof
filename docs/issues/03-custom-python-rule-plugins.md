@@ -4,7 +4,7 @@ Suggested labels: `enhancement`, `help wanted`
 
 ## Background
 
-SheetProof intentionally loads YAML safely and evaluates deterministic built-in rules. Some users
+Tabulint intentionally loads YAML safely and evaluates deterministic built-in rules. Some users
 need organization-specific checks that cannot be expressed in the current schema. A plugin API can
 support trusted, installed Python packages, but it must never turn workbook content or a PR checkout
 into executable code.
@@ -16,7 +16,7 @@ and trusted packages, while preserving canonical evidence and result models.
 
 ## Suggested implementation
 
-- Discover plugins through Python package entry points under a SheetProof-specific group.
+- Discover plugins through Python package entry points under a Tabulint-specific group.
 - Pass immutable or read-only typed workbook facts into a narrow rule protocol and require typed,
   serializable evidence in return.
 - Require explicit configuration to enable a named plugin; reject unknown options and duplicate

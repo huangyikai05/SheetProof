@@ -1,18 +1,17 @@
 # Changelog
 
-All notable user-visible changes to SheetProof are documented here.
+All notable user-visible changes to Tabulint are documented here.
 
-The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). SheetProof uses
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Tabulint uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-No user-visible changes have been recorded after the v0.1.0 release candidate.
+No user-visible changes have been recorded after the v0.1.0 release.
 
-## 0.1.0 - Unreleased
+## 0.1.0 - 2026-07-17
 
-This section describes the first public release candidate. A calendar date will be added only
-when the release is actually published.
+This section describes the first public release.
 
 ### Added
 
@@ -46,7 +45,7 @@ when the release is actually published.
 
 ### Limitations
 
-- SheetProof does not implement or emulate Excel's full calculation engine; cached formula values
+- Tabulint does not implement or emulate Excel's full calculation engine; cached formula values
   may be missing or stale.
 - Formula parsing is not a complete Excel grammar. Some complex and dynamic formulas receive only
   reference-level or unsupported-analysis evidence.
@@ -58,4 +57,4 @@ when the release is actually published.
 - Risk scores prioritize review and are not probabilities, correctness proofs, or professional
   financial-audit conclusions.
 
-[Unreleased]: https://github.com/huangyikai05/SheetProof/commits/main
+[Unreleased]: https://github.com/huangyikai05/Tabulint/commits/main

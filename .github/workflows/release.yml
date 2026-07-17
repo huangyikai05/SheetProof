@@ -43,7 +43,7 @@ jobs:
           import pathlib
           import runpy
 
-          version_file = pathlib.Path("sheetproof/_version.py")
+          version_file = pathlib.Path("tabulint/_version.py")
           version = runpy.run_path(str(version_file))["__version__"]
           expected_tag = f"v{version}"
           actual_tag = os.environ["RELEASE_TAG"]
@@ -66,16 +66,16 @@ jobs:
         run: python -m ruff check .
 
       - name: Run Mypy
-        run: python -m mypy sheetproof
+        run: python -m mypy tabulint
 
       - name: Compile Python sources
-        run: python -m compileall -q sheetproof web scripts examples
+        run: python -m compileall -q tabulint web scripts examples
 
       - name: Build source and wheel distributions
         run: python -m build
 
       - name: Validate distribution metadata
-        run: python -m twine check dist/*
+        run: python -m twine check --strict dist/*
 
       - name: Upload verified distributions
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -92,7 +92,7 @@ jobs:
     timeout-minutes: 10
     environment:
       name: pypi
-      url: https://pypi.org/project/sheetproof/
+      url: https://pypi.org/project/tabulint/
     permissions:
       contents: read
       id-token: write

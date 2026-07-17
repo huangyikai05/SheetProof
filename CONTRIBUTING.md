@@ -1,6 +1,6 @@
-# Contributing to SheetProof
+# Contributing to Tabulint
 
-Thank you for helping improve deterministic spreadsheet review. SheetProof has one
+Thank you for helping improve deterministic spreadsheet review. Tabulint has one
 non-negotiable design rule:
 
 > Programs validate. AI may explain evidence, but AI text, confidence, or model responses must
@@ -19,13 +19,13 @@ non-negotiable design rule:
 
 ## Clone and install
 
-SheetProof requires Python 3.11 or newer.
+Tabulint requires Python 3.11 or newer.
 
 On macOS or Linux:
 
 ~~~bash
-git clone https://github.com/huangyikai05/SheetProof.git
-cd SheetProof
+git clone https://github.com/huangyikai05/Tabulint.git
+cd Tabulint
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -35,8 +35,8 @@ python -m pip install -e ".[dev]"
 On PowerShell:
 
 ~~~powershell
-git clone https://github.com/huangyikai05/SheetProof.git
-Set-Location SheetProof
+git clone https://github.com/huangyikai05/Tabulint.git
+Set-Location Tabulint
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
@@ -46,8 +46,8 @@ python -m pip install -e ".[dev]"
 On Command Prompt:
 
 ~~~bat
-git clone https://github.com/huangyikai05/SheetProof.git
-cd SheetProof
+git clone https://github.com/huangyikai05/Tabulint.git
+cd Tabulint
 py -3.11 -m venv .venv
 .\.venv\Scripts\activate.bat
 python -m pip install --upgrade pip
@@ -84,8 +84,8 @@ Run focused tests while iterating, then the complete project checks before reque
 ~~~bash
 pytest
 ruff check .
-mypy sheetproof
-python -m compileall -q sheetproof web scripts examples
+mypy tabulint
+python -m compileall -q tabulint web scripts examples
 ~~~
 
 For a user-facing comparison or report change, also regenerate and run both synthetic demos:
@@ -93,13 +93,13 @@ For a user-facing comparison or report change, also regenerate and run both synt
 ~~~bash
 python examples/generate_demo_workbooks.py
 
-sheetproof compare examples/generated/before.xlsx examples/generated/after_safe.xlsx \
-  --config examples/sheetproof.example.yml \
+tabulint compare examples/generated/before.xlsx examples/generated/after_safe.xlsx \
+  --config examples/tabulint.example.yml \
   --json build/safe-review.json \
   --html build/safe-review.html
 
-sheetproof compare examples/generated/before.xlsx examples/generated/after_risky.xlsx \
-  --config examples/sheetproof.example.yml \
+tabulint compare examples/generated/before.xlsx examples/generated/after_risky.xlsx \
+  --config examples/tabulint.example.yml \
   --json build/risky-review.json \
   --html build/risky-review.html
 ~~~
@@ -127,7 +127,7 @@ skip, or delete a test merely to make a change pass.
 
 ## Change the rule engine
 
-Built-in rules live in <code>sheetproof/rules/</code> and their canonical configuration contracts
+Built-in rules live in <code>tabulint/rules/</code> and their canonical configuration contracts
 live in the typed models.
 
 When adding or changing a rule:

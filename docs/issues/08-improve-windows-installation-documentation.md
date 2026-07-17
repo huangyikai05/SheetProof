@@ -17,8 +17,8 @@ PowerShell and Command Prompt.
 ## Suggested implementation
 
 - Show separate copyable blocks for `py -3.11 -m venv .venv`, activation, package installation,
-  `sheetproof version`, and a synthetic demo comparison.
-- Explain when to use `python -m sheetproof` or the virtual-environment executable if the console
+  `tabulint version`, and a synthetic demo comparison.
+- Explain when to use `python -m tabulint` or the virtual-environment executable if the console
   entry point is not on `PATH`.
 - Cover paths containing spaces and non-ASCII characters without requiring administrator access.
 - Include focused troubleshooting for execution policy, missing `py`, stale virtual environments,
@@ -31,7 +31,7 @@ PowerShell and Command Prompt.
 - [ ] The guide installs into a virtual environment without administrator privileges.
 - [ ] Version, help, inspect, and compare examples match the current CLI.
 - [ ] At least one documented example uses a path containing spaces or Chinese characters.
-- [ ] Troubleshooting commands identify the active Python and `sheetproof` executable.
+- [ ] Troubleshooting commands identify the active Python and `tabulint` executable.
 - [ ] A Windows reviewer or Windows CI smoke run verifies the commands before merge.
 
 ## Non-goals

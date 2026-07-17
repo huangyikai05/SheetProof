@@ -3,14 +3,14 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sheetproof"
+name = "tabulint"
 dynamic = ["version"]
 description = "Deterministic semantic review and CI for Excel workbook changes"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "SheetProof contributors" }]
+authors = [{ name = "Tabulint contributors" }]
 keywords = ["excel", "xlsx", "audit", "diff", "ci", "spreadsheet"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -45,27 +45,27 @@ release = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/huangyikai05/SheetProof"
-Repository = "https://github.com/huangyikai05/SheetProof"
-Issues = "https://github.com/huangyikai05/SheetProof/issues"
-Changelog = "https://github.com/huangyikai05/SheetProof/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/huangyikai05/Tabulint"
+Repository = "https://github.com/huangyikai05/Tabulint"
+Issues = "https://github.com/huangyikai05/Tabulint/issues"
+Changelog = "https://github.com/huangyikai05/Tabulint/blob/main/CHANGELOG.md"
 
 [project.scripts]
-sheetproof = "sheetproof.cli:app"
+tabulint = "tabulint.cli:app"
 
 [tool.setuptools]
 include-package-data = false
 
 [tool.setuptools.packages.find]
-include = ["sheetproof*"]
+include = ["tabulint*"]
 namespaces = false
 
 [tool.setuptools.dynamic]
-version = { attr = "sheetproof._version.__version__" }
+version = { attr = "tabulint._version.__version__" }
 
 [tool.setuptools.package-data]
-sheetproof = ["py.typed"]
-"sheetproof.reports" = ["templates/*.j2"]
+tabulint = ["py.typed"]
+"tabulint.reports" = ["templates/*.j2"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-config --strict-markers"
@@ -81,7 +81,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 
 [tool.mypy]
 python_version = "3.11"
-files = ["sheetproof"]
+files = ["tabulint"]
 check_untyped_defs = true
 disallow_untyped_defs = true
 no_implicit_optional = true

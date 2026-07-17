@@ -1,4 +1,4 @@
-# SheetProof demo recording script
+# Tabulint demo recording script
 
 This script is designed for a clear 30–60 second terminal-and-report recording. No GIF is checked
 in yet: record the real application after the release branch is verified, then review the
@@ -8,14 +8,14 @@ resulting media for readable text, secrets, local usernames, and unrelated deskt
 
 Use a clean clone, a terminal large enough to show one-line summaries, and a browser with no
 sensitive tabs. Create and activate the virtual environment before the take. If network
-installation is slow, warm pip's dependency cache first, but keep the real SheetProof install
+installation is slow, warm pip's dependency cache first, but keep the real Tabulint install
 command in the recording.
 
 PowerShell preparation:
 
 ~~~powershell
-git clone https://github.com/huangyikai05/SheetProof.git
-Set-Location SheetProof
+git clone https://github.com/huangyikai05/Tabulint.git
+Set-Location Tabulint
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
@@ -24,8 +24,8 @@ python -m pip install --upgrade pip
 macOS/Linux preparation:
 
 ~~~bash
-git clone https://github.com/huangyikai05/SheetProof.git
-cd SheetProof
+git clone https://github.com/huangyikai05/Tabulint.git
+cd Tabulint
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -40,10 +40,10 @@ the take so the report visibly comes from the recorded command.
 
 Show the repository README heading and say:
 
-> SheetProof compares Excel workbooks with deterministic rules. It never runs formulas, macros,
+> Tabulint compares Excel workbooks with deterministic rules. It never runs formulas, macros,
 > or external links.
 
-### 8–16 seconds: install SheetProof
+### 8–16 seconds: install Tabulint
 
 ~~~bash
 python -m pip install -e .
@@ -65,7 +65,7 @@ Briefly show the three printed paths: <code>before.xlsx</code>, <code>after_safe
 Enter this as one command to keep the recording readable:
 
 ~~~bash
-sheetproof compare examples/generated/before.xlsx examples/generated/after_risky.xlsx --config examples/sheetproof.example.yml --json build/risky-review.json --html build/risky-review.html
+tabulint compare examples/generated/before.xlsx examples/generated/after_risky.xlsx --config examples/tabulint.example.yml --json build/risky-review.json --html build/risky-review.html
 ~~~
 
 Pause on the real summary:
@@ -120,5 +120,5 @@ Return to the report summary or README and say:
   paths.
 - Verify the final GIF or video is legible at GitHub README width.
 - Do not add the README media link until the final file exists at
-  <code>docs/assets/sheetproof-demo.gif</code> and has been reviewed.
+  <code>docs/assets/tabulint-demo.gif</code> and has been reviewed.
 - Prefer a short MP4 linked from release notes if a readable GIF would be excessively large.

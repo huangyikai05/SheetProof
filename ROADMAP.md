@@ -1,4 +1,4 @@
-# SheetProof roadmap
+# Tabulint roadmap
 
 This roadmap communicates direction, not promised scope or delivery dates. Priorities may change
 in response to real workbook compatibility reports, security findings, and maintainer capacity.

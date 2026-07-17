@@ -12,10 +12,10 @@ body:
         credentials, or secrets. Report security vulnerabilities through `SECURITY.md` instead.
 
   - type: input
-    id: sheetproof-version
+    id: tabulint-version
     attributes:
-      label: SheetProof version or commit
-      description: Paste the output of `sheetproof version` and, when relevant, the commit SHA.
+      label: Tabulint version or commit
+      description: Paste the output of `tabulint version` and, when relevant, the commit SHA.
       placeholder: 0.1.0 / abc1234
     validations:
       required: true
@@ -67,7 +67,7 @@ body:
         Attach a workbook only when a generator cannot reproduce the issue.
       placeholder: |
         1. Generate a synthetic workbook with ...
-        2. Run `sheetproof inspect ...` or `sheetproof compare ...`
+        2. Run `tabulint inspect ...` or `tabulint compare ...`
         3. Observe ...
     validations:
       required: true

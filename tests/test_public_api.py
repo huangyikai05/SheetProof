@@ -1,4 +1,4 @@
-"""Tests for the stable, documented SheetProof Python API."""
+"""Tests for the stable, documented Tabulint Python API."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ from pathlib import Path
 
 from openpyxl import Workbook
 
-from sheetproof import ReviewResult, __version__, compare_workbooks
-from sheetproof._version import __version__ as canonical_version
+from tabulint import ReviewResult, __version__, compare_workbooks
+from tabulint._version import __version__ as canonical_version
 from tests.conftest import WorkbookFactory
 
 
@@ -31,7 +31,7 @@ def test_compare_workbooks_returns_versioned_review_result(
 ) -> None:
     before = workbook_factory("public-api-before.xlsx", _before)
     after = workbook_factory("public-api-after.xlsx", _after)
-    config = tmp_path / "sheetproof.yml"
+    config = tmp_path / "tabulint.yml"
     config.write_text("rules: []\n", encoding="utf-8")
 
     result = compare_workbooks(before, after, config)

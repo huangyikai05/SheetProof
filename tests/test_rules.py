@@ -7,13 +7,13 @@ from typing import Any
 import pytest
 from openpyxl import Workbook
 
-from sheetproof.diff.workbook_diff import WorkbookDiffer
-from sheetproof.exceptions import ConfigurationError
-from sheetproof.models import RuleFailureStatus, RuleSpec, RuleStatus, SheetProofConfig
-from sheetproof.parser.workbook import WorkbookParser
-from sheetproof.rules.builtin_rules import RuleContext, evaluate_builtin_rule
-from sheetproof.rules.engine import RuleEngine
-from sheetproof.rules.loader import load_config, validate_config_text
+from tabulint.diff.workbook_diff import WorkbookDiffer
+from tabulint.exceptions import ConfigurationError
+from tabulint.models import RuleFailureStatus, RuleSpec, RuleStatus, TabulintConfig
+from tabulint.parser.workbook import WorkbookParser
+from tabulint.rules.builtin_rules import RuleContext, evaluate_builtin_rule
+from tabulint.rules.engine import RuleEngine
+from tabulint.rules.loader import load_config, validate_config_text
 from tests.conftest import WorkbookFactory, add_vba_project
 
 
@@ -237,7 +237,7 @@ def test_rule_engine_isolates_missing_sheet_and_cell_errors(
     raw_spec: dict[str, Any],
 ) -> None:
     context = _context(workbook_factory, "clean")
-    config = SheetProofConfig(rules=[RuleSpec.model_validate(raw_spec)])
+    config = TabulintConfig(rules=[RuleSpec.model_validate(raw_spec)])
 
     result = RuleEngine().evaluate(
         config,
@@ -263,7 +263,7 @@ def test_rule_engine_can_emit_configured_warning(
             "failure_status": "WARNING",
         }
     )
-    config = SheetProofConfig(rules=[spec])
+    config = TabulintConfig(rules=[spec])
 
     result = RuleEngine().evaluate(
         config,
@@ -289,7 +289,7 @@ def test_numeric_formula_without_cached_value_is_skipped(
     parser = WorkbookParser()
     before = parser.parse(workbook_factory("formula-before.xlsx", configure))
     after = parser.parse(workbook_factory("formula-after.xlsx", configure))
-    config = SheetProofConfig(
+    config = TabulintConfig(
         rules=[
             RuleSpec(
                 name="formula numeric",
@@ -361,7 +361,7 @@ def test_load_config_defaults_and_missing_path(tmp_path: Any) -> None:
     ],
 )
 def test_configuration_rejects_boolean_numeric_values(text: str) -> None:
-    with pytest.raises(ConfigurationError, match="Invalid SheetProof configuration"):
+    with pytest.raises(ConfigurationError, match="Invalid Tabulint configuration"):
         validate_config_text(text)
 
 
@@ -381,7 +381,7 @@ def test_configuration_rejects_boolean_numeric_values(text: str) -> None:
     ],
 )
 def test_configuration_rejects_coercible_numeric_strings(text: str) -> None:
-    with pytest.raises(ConfigurationError, match="Invalid SheetProof configuration"):
+    with pytest.raises(ConfigurationError, match="Invalid Tabulint configuration"):
         validate_config_text(text)
 
 

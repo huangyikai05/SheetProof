@@ -1,29 +1,29 @@
-# SheetProof
+# Tabulint
 
-[![CI](https://github.com/huangyikai05/SheetProof/actions/workflows/ci.yml/badge.svg)](https://github.com/huangyikai05/SheetProof/actions/workflows/ci.yml)
-[![Tested on Python 3.11 and 3.12](https://img.shields.io/badge/tested-Python%203.11%20%7C%203.12-3776AB?logo=python&logoColor=white)](https://github.com/huangyikai05/SheetProof/blob/main/pyproject.toml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/huangyikai05/SheetProof/blob/main/LICENSE)
+[![CI](https://github.com/huangyikai05/Tabulint/actions/workflows/ci.yml/badge.svg)](https://github.com/huangyikai05/Tabulint/actions/workflows/ci.yml)
+[![Tested on Python 3.11 and 3.12](https://img.shields.io/badge/tested-Python%203.11%20%7C%203.12-3776AB?logo=python&logoColor=white)](https://github.com/huangyikai05/Tabulint/blob/main/pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/huangyikai05/Tabulint/blob/main/LICENSE)
 
 **Deterministic spreadsheet change review and CI for Excel workbooks.**
 
-SheetProof is an open-source spreadsheet review and CI tool that detects risky Excel changes,
+Tabulint is an open-source spreadsheet review and CI tool that detects risky Excel changes,
 formula overwrites, structural modifications, dependency impacts, and business-rule violations
 before they reach production.
 
-SheetProof 是一个开源的 Excel 变更审查与持续集成工具，用于在文件投入使用前发现公式覆盖、
+Tabulint 是一个开源的 Excel 变更审查与持续集成工具，用于在文件投入使用前发现公式覆盖、
 结构变化、依赖影响和业务规则违规。
 
 Install the current public source and compare two workbooks:
 
 ~~~bash
-python -m pip install "sheetproof @ git+https://github.com/huangyikai05/SheetProof.git@main"
-sheetproof compare before.xlsx after.xlsx --html report.html
+python -m pip install "tabulint @ git+https://github.com/huangyikai05/Tabulint.git@main"
+tabulint compare before.xlsx after.xlsx --html report.html
 ~~~
 
 The generated risky demo produces this real result:
 
 ~~~text
-SheetProof Review
+Tabulint Review
 
 Risk score:             100/100
 Risk level:             CRITICAL
@@ -42,22 +42,21 @@ The exact CLI summary is:
 Risk 100/100 (CRITICAL); 5 changed cells; 1 formula overwrites; 4 failed, 1 warning, and 0 errored rules.
 ~~~
 
-[Run the safe demo](https://github.com/huangyikai05/SheetProof/blob/main/docs/demo-safe.md) ·
-[Run the risky demo](https://github.com/huangyikai05/SheetProof/blob/main/docs/demo-risky.md) ·
-[Record the 30–60 second demo](https://github.com/huangyikai05/SheetProof/blob/main/docs/demo-script.md) ·
-[Read the v0.1.0 release draft](https://github.com/huangyikai05/SheetProof/blob/main/docs/releases/v0.1.0.md)
+[Run the safe demo](https://github.com/huangyikai05/Tabulint/blob/main/docs/demo-safe.md) ·
+[Run the risky demo](https://github.com/huangyikai05/Tabulint/blob/main/docs/demo-risky.md) ·
+[Record the 30–60 second demo](https://github.com/huangyikai05/Tabulint/blob/main/docs/demo-script.md) ·
+[Read the v0.1.0 release notes](https://github.com/huangyikai05/Tabulint/blob/main/docs/releases/v0.1.0.md)
 
-> SheetProof v0.1.0 is being prepared for PyPI. This README does not claim that the package has
-> already been published there. Until publication is confirmed, use the source installation
-> above or clone the repository.
+> Install published releases from PyPI. To test unreleased changes, install the public
+> <code>main</code> branch or clone the repository as described below.
 
 ## How it works
 
 ~~~mermaid
 flowchart LR
-    B["before.xlsx"] --> S["SheetProof"]
+    B["before.xlsx"] --> S["Tabulint"]
     A["after.xlsx"] --> S
-    P["optional sheetproof.yml"] --> S
+    P["optional tabulint.yml"] --> S
     S --> D["Semantic diff"]
     S --> F["Formula overwrite and pattern detection"]
     S --> G["Bounded dependency impact"]
@@ -74,13 +73,13 @@ flowchart LR
 Programs produce every finding, risk contribution, rule result, and exit code. AI-generated
 text is never used as validation evidence or as a merge decision.
 
-## Why SheetProof
+## Why Tabulint
 
 An Excel workbook is a ZIP-based document, not a line-oriented source file. A normal Git diff
 cannot explain that a formula became a fixed value, a total range became shorter, a hidden sheet
 appeared, or a critical downstream cell may be affected.
 
-SheetProof converts workbook facts into stable, reviewable evidence:
+Tabulint converts workbook facts into stable, reviewable evidence:
 
 - semantic cell and workbook changes instead of raw XML noise;
 - explicit formula-overwrite, range-reduction, and copied-pattern findings;
@@ -89,7 +88,7 @@ SheetProof converts workbook facts into stable, reviewable evidence:
 - explainable, capped risk contributions;
 - one typed result shared by the CLI, reports, web page, Python API, and CI.
 
-SheetProof is a review aid. It does not prove that a workbook is correct and does not replace
+Tabulint is a review aid. It does not prove that a workbook is correct and does not replace
 professional financial, security, legal, or operational review.
 
 ## Key features
@@ -115,16 +114,16 @@ professional financial, security, legal, or operational review.
 Clone the repository to generate both reproducible demo cases:
 
 ~~~bash
-git clone https://github.com/huangyikai05/SheetProof.git
-cd SheetProof
+git clone https://github.com/huangyikai05/Tabulint.git
+cd Tabulint
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e .
 python examples/generate_demo_workbooks.py
 
-sheetproof compare examples/generated/before.xlsx examples/generated/after_safe.xlsx \
-  --config examples/sheetproof.example.yml \
+tabulint compare examples/generated/before.xlsx examples/generated/after_safe.xlsx \
+  --config examples/tabulint.example.yml \
   --json build/safe-review.json \
   --html build/safe-review.html
 ~~~
@@ -133,8 +132,8 @@ The safe comparison exits <code>0</code> with <code>2/100 LOW</code>. The risky 
 intentionally exits <code>1</code>; that exit is the expected gate result, not a crash:
 
 ~~~bash
-sheetproof compare examples/generated/before.xlsx examples/generated/after_risky.xlsx \
-  --config examples/sheetproof.example.yml \
+tabulint compare examples/generated/before.xlsx examples/generated/after_risky.xlsx \
+  --config examples/tabulint.example.yml \
   --json build/risky-review.json \
   --html build/risky-review.html
 ~~~
@@ -169,10 +168,16 @@ Requirements:
 - a platform supported by Python and openpyxl;
 - local access to the workbooks being reviewed.
 
-Until the PyPI release is confirmed, install from the public repository:
+Install a published release from PyPI:
 
 ~~~bash
-python -m pip install "sheetproof @ git+https://github.com/huangyikai05/SheetProof.git@main"
+python -m pip install tabulint
+~~~
+
+To test unreleased changes from the public repository:
+
+~~~bash
+python -m pip install "tabulint @ git+https://github.com/huangyikai05/Tabulint.git@main"
 ~~~
 
 From a clone:
@@ -193,19 +198,18 @@ Contributor environment:
 python -m pip install -e ".[dev,web]"
 ~~~
 
-Verify the installed entry point with <code>sheetproof version</code>,
-<code>sheetproof --help</code>, and <code>sheetproof compare --help</code>.
+Verify the installed entry point with <code>tabulint version</code>,
+<code>tabulint --help</code>, and <code>tabulint compare --help</code>.
 
-After the package owner has completed and verified the PyPI release, the intended installation
-command is <code>python -m pip install sheetproof</code>.
+The canonical package installation command is <code>python -m pip install tabulint</code>.
 
 ## CLI usage
 
 ### Compare two workbooks
 
 ~~~bash
-sheetproof compare BEFORE.xlsx AFTER.xlsx \
-  [--config sheetproof.yml] \
+tabulint compare BEFORE.xlsx AFTER.xlsx \
+  [--config tabulint.yml] \
   [--json report.json] \
   [--html report.html] \
   [--fail-on LOW|MEDIUM|HIGH|CRITICAL]
@@ -217,8 +221,8 @@ A failed or errored rule always blocks.
 ### Inspect one workbook
 
 ~~~bash
-sheetproof inspect workbook.xlsx
-sheetproof inspect workbook.xlsm --json build/snapshot.json
+tabulint inspect workbook.xlsx
+tabulint inspect workbook.xlsm --json build/snapshot.json
 ~~~
 
 Inspection records workbook facts. It does not recalculate formulas or run VBA.
@@ -226,8 +230,8 @@ Inspection records workbook facts. It does not recalculate formulas or run VBA.
 ### Validate a policy
 
 ~~~bash
-sheetproof rules validate sheetproof.yml
-sheetproof version
+tabulint rules validate tabulint.yml
+tabulint version
 ~~~
 
 ### Exit codes
@@ -287,8 +291,8 @@ max_dependency_nodes: 10000
 ~~~
 
 A numeric rule that targets a formula without a usable cached value is reported as
-<code>SKIPPED</code>; SheetProof never invents the value or pretends to emulate Excel.
-See [the complete demo policy](https://github.com/huangyikai05/SheetProof/blob/main/examples/sheetproof.example.yml).
+<code>SKIPPED</code>; Tabulint never invents the value or pretends to emulate Excel.
+See [the complete demo policy](https://github.com/huangyikai05/Tabulint/blob/main/examples/tabulint.example.yml).
 
 ## GitHub Actions
 
@@ -296,8 +300,8 @@ The repository provides:
 
 - a normal <code>CI</code> workflow for tests, Ruff, Mypy, and compilation on supported Python
   versions;
-- a composite SheetProof action and a read-only workbook pull-request gate;
-- a release workflow prepared for PyPI Trusted Publishing.
+- a composite Tabulint action and a read-only workbook pull-request gate;
+- a release workflow using PyPI Trusted Publishing.
 
 The required workbook gate deliberately loads its implementation, helper, and policy from a
 separate trusted base checkout. Pull-request workbooks are treated as Git-object input; PR code
@@ -305,16 +309,16 @@ is not imported or executed. Added or deleted workbooks are <code>UNREVIEWABLE</
 by default because a semantic comparison needs both sides. The action supports an explicit
 advisory mode for unpaired files.
 
-The PyPI release workflow is preparation, not proof of publication. The repository owner must
-configure the <code>pypi</code> GitHub Environment and matching PyPI Trusted Publisher before a
-release can publish. No PyPI token belongs in the repository.
+The PyPI release workflow requires a protected <code>pypi</code> GitHub Environment and a
+matching PyPI Trusted Publisher. It exchanges GitHub's short-lived OIDC identity for upload
+authority, so no PyPI token belongs in the repository.
 
-See [the composite action](https://github.com/huangyikai05/SheetProof/blob/main/action/action.yml)
-and [the workbook workflow](https://github.com/huangyikai05/SheetProof/blob/main/.github/workflows/sheetproof.yml).
+See [the composite action](https://github.com/huangyikai05/Tabulint/blob/main/action/action.yml)
+and [the workbook workflow](https://github.com/huangyikai05/Tabulint/blob/main/.github/workflows/tabulint.yml).
 
 ### Action artifact privacy
 
-SheetProof itself does not upload workbooks or telemetry. A GitHub Actions workflow may,
+Tabulint itself does not upload workbooks or telemetry. A GitHub Actions workflow may,
 however, upload generated JSON and HTML reports as artifacts. Those reports can contain derived
 workbook content such as cell addresses, formulas, before/after values, sheet names, external-link
 names, and rule evidence. Repository owners should treat report artifacts according to the source
@@ -328,8 +332,8 @@ The repository stores generators rather than proprietary workbook fixtures. Run
 
 | Case | Risk | Evidence summary | Exit |
 | --- | --- | --- | ---: |
-| [Safe update](https://github.com/huangyikai05/SheetProof/blob/main/docs/demo-safe.md) | 2/100 LOW | 1 changed cell; no formula, structure, link, or blocking-rule finding | 0 |
-| [Risky update](https://github.com/huangyikai05/SheetProof/blob/main/docs/demo-risky.md) | 100/100 CRITICAL | 5 changed cells; 3 formula changes; 1 overwrite; 1 hidden sheet; 1 external link; 4 failed rules | 1 |
+| [Safe update](https://github.com/huangyikai05/Tabulint/blob/main/docs/demo-safe.md) | 2/100 LOW | 1 changed cell; no formula, structure, link, or blocking-rule finding | 0 |
+| [Risky update](https://github.com/huangyikai05/Tabulint/blob/main/docs/demo-risky.md) | 100/100 CRITICAL | 5 changed cells; 3 formula changes; 1 overwrite; 1 hidden sheet; 1 external link; 4 failed rules | 1 |
 
 The commands write machine-readable JSON and a self-contained HTML report to <code>build/</code>.
 Generated reports are intentionally not presented as static golden verdicts; regenerate them
@@ -341,12 +345,12 @@ The supported top-level helper returns the same typed <code>ReviewResult</code> 
 interface:
 
 ~~~python
-from sheetproof import compare_workbooks
+from tabulint import compare_workbooks
 
 result = compare_workbooks(
     before_path="before.xlsx",
     after_path="after.xlsx",
-    config_path="sheetproof.yml",
+    config_path="tabulint.yml",
 )
 
 print(result.summary.risk_score)
@@ -369,21 +373,21 @@ not parse human-readable descriptions to implement a gate.
 - HTML is autoescaped and contains no online CDN dependency.
 - Core findings and gate decisions come from deterministic program logic, never a language model.
 
-Read [SECURITY.md](https://github.com/huangyikai05/SheetProof/blob/main/SECURITY.md) before
+Read [SECURITY.md](https://github.com/huangyikai05/Tabulint/blob/main/SECURITY.md) before
 processing untrusted inputs and use its private reporting process for vulnerabilities.
 
 ## Privacy
 
 Local CLI, Python, and Streamlit reviews require no account, API key, database, or cloud service.
-SheetProof does not upload workbook contents or emit telemetry. Files remain on the machine unless
+Tabulint does not upload workbook contents or emit telemetry. Files remain on the machine unless
 the user or an integration explicitly copies or uploads an output. In particular, review the
 [Action artifact privacy](#action-artifact-privacy) boundary before enabling CI for sensitive
 workbooks.
 
 ## Known limitations
 
-- SheetProof cannot fully simulate Excel's calculation engine. Cached values may be absent or
-  stale, and SheetProof never fabricates them.
+- Tabulint cannot fully simulate Excel's calculation engine. Cached values may be absent or
+  stale, and Tabulint never fabricates them.
 - Formula parsing is not a complete Excel grammar. Some complex formulas receive reference-level
   analysis only; dynamic references such as <code>INDIRECT</code> cannot be reliably resolved.
 - VBA is detected only; macro behavior is not analyzed.
@@ -398,7 +402,7 @@ workbooks.
 
 ## Roadmap
 
-See [ROADMAP.md](https://github.com/huangyikai05/SheetProof/blob/main/ROADMAP.md) for the public,
+See [ROADMAP.md](https://github.com/huangyikai05/Tabulint/blob/main/ROADMAP.md) for the public,
 non-date-bound roadmap. Proposed post-MVP work includes formula graph visualization, better
 formula parsing, optional PR comments, deterministic rule plugins, performance work, and
 carefully bounded evidence-explanation integrations. Roadmap items are proposals, not release
@@ -406,13 +410,13 @@ promises.
 
 ## Contributing
 
-Read [CONTRIBUTING.md](https://github.com/huangyikai05/SheetProof/blob/main/CONTRIBUTING.md) and
-[AGENTS.md](https://github.com/huangyikai05/SheetProof/blob/main/AGENTS.md). Core changes must
+Read [CONTRIBUTING.md](https://github.com/huangyikai05/Tabulint/blob/main/CONTRIBUTING.md) and
+[AGENTS.md](https://github.com/huangyikai05/Tabulint/blob/main/AGENTS.md). Core changes must
 include focused tests and preserve the rule that programs validate while AI may only explain
 evidence. Use synthetic minimal workbooks; never submit confidential, proprietary, or
 source-unknown Excel files.
 
 ## License
 
-SheetProof is available under the
-[MIT License](https://github.com/huangyikai05/SheetProof/blob/main/LICENSE).
+Tabulint is available under the
+[MIT License](https://github.com/huangyikai05/Tabulint/blob/main/LICENSE).

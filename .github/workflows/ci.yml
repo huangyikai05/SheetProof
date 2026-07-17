@@ -49,7 +49,7 @@ jobs:
         run: python -m ruff check .
 
       - name: Run Mypy
-        run: python -m mypy sheetproof
+        run: python -m mypy tabulint
 
       - name: Compile Python sources
-        run: python -m compileall -q sheetproof web scripts examples
+        run: python -m compileall -q tabulint web scripts examples

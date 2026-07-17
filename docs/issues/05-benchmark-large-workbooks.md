@@ -4,7 +4,7 @@ Suggested labels: `performance`, `help wanted`
 
 ## Background
 
-SheetProof protects untrusted-input processing with parser and graph bounds, but maintainers need a
+Tabulint protects untrusted-input processing with parser and graph bounds, but maintainers need a
 repeatable way to observe runtime, peak memory, report size, and truncation behavior as synthetic
 workbooks grow. One-off measurements are not comparable and should not become unsupported marketing
 claims.
@@ -23,7 +23,7 @@ patterns, with enough environment metadata to compare runs responsibly.
   parser/graph limit reached.
 - Keep the largest cases out of required pull-request CI; run a small smoke benchmark in CI and
   document an explicit command for full local runs.
-- Store machine-readable results with Python, OS, CPU, and SheetProof revision metadata.
+- Store machine-readable results with Python, OS, CPU, and Tabulint revision metadata.
 
 ## Acceptance criteria
 
