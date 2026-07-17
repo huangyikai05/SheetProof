@@ -5,7 +5,7 @@ from pathlib import Path
 
 from openpyxl import Workbook
 
-from sheetproof.services.review_service import ReviewService
+from tabulint.services.review_service import ReviewService
 from tests.conftest import WorkbookFactory
 from web.app import _formula_overwrite_rows
 

@@ -1,6 +1,6 @@
 # Security policy
 
-SheetProof processes files that may be untrusted. Security defects in archive validation,
+Tabulint processes files that may be untrusted. Security defects in archive validation,
 path handling, report escaping, configuration parsing, or CI integration are therefore
 treated seriously.
 
@@ -31,7 +31,7 @@ the reporter if requested. Response times cannot be guaranteed while the project
 
 ## Security boundaries
 
-SheetProof is designed to:
+Tabulint is designed to:
 
 - run locally without API keys or uploads;
 - read only `.xlsx` and `.xlsm` OOXML archives within configured resource limits;
@@ -46,12 +46,12 @@ SheetProof is designed to:
   base-commit checkout rather than from pull-request head code.
 
 The included base-owned `pull_request_target` workflow checks the current trusted base into
-`.sheetproof-trusted` and the base repository's generated pull-request head ref into
-`.sheetproof-pr`. It invokes `./.sheetproof-trusted/action`, passes the current base SHA as
+`.tabulint-trusted` and the base repository's generated pull-request head ref into
+`.tabulint-pr`. It invokes `./.tabulint-trusted/action`, passes the current base SHA as
 `config-ref`, and treats the second checkout only as a Git object source and artifact destination.
 The helper computes the base/head merge base for discovery and before-side blobs, while policy
 continues to come from the current base. It runs Python from its trusted source directory with
-inherited `PYTHONPATH`/`PYTHONHOME` removed, preventing a PR-local `sheetproof` package from
+inherited `PYTHONPATH`/`PYTHONHOME` removed, preventing a PR-local `tabulint` package from
 shadowing the trusted implementation. Do not collapse these checkouts, execute PR code, add
 secrets, or point `config-ref` at an untrusted PR commit in a required gate.
 
@@ -63,7 +63,7 @@ Formula analysis and dependency traversal use explicit per-formula, per-review, 
 budgets. When a budget is exhausted, the result records truncation and unsupported analysis
 instead of silently treating the formula as fully analyzed.
 
-SheetProof does not sandbox Python itself, emulate Excel, remove malware, validate digital
+Tabulint does not sandbox Python itself, emulate Excel, remove malware, validate digital
 signatures, or certify a workbook as safe. Run it with least privilege and treat reports as
 review evidence, not as a substitute for malware analysis or professional audit.
 

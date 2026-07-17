@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from openpyxl import Workbook
 
-from sheetproof.graph.dependency_graph import DependencyGraph
-from sheetproof.graph.impact_analysis import DependencyAnalyzer
-from sheetproof.parser.workbook import WorkbookParser
-from sheetproof.services.review_service import ReviewService
+from tabulint.graph.dependency_graph import DependencyGraph
+from tabulint.graph.impact_analysis import DependencyAnalyzer
+from tabulint.parser.workbook import WorkbookParser
+from tabulint.services.review_service import ReviewService
 from tests.conftest import WorkbookFactory
 
 

@@ -1,4 +1,4 @@
-"""Generate safe, deterministic SheetProof demo workbooks from source."""
+"""Generate safe, deterministic Tabulint demo workbooks from source."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ def _build_before() -> Workbook:
     notes = workbook.create_sheet("说明")
 
     forecast.merge_cells("A1:H1")
-    forecast["A1"] = "SheetProof Forecast Demo"
+    forecast["A1"] = "Tabulint Forecast Demo"
     forecast["A1"].font = Font(size=16, bold=True, color="FFFFFF")
     forecast["A1"].fill = HEADER_FILL
     forecast["A1"].alignment = Alignment(horizontal="center")

@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tabulint Review Report</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #dfe4ec;
+      --panel: #ffffff;
+      --canvas: #f4f7fb;
+      --brand: #2457d6;
+      --low: #147d64;
+      --medium: #a85d00;
+      --high: #c13d26;
+      --critical: #8e193d;
+      --shadow: 0 12px 30px rgba(19, 33, 68, .08);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font: 14px/1.55 Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .page { width: min(1220px, calc(100% - 32px)); margin: 32px auto 64px; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: center;
+      padding: 30px;
+      border-radius: 18px;
+      color: #fff;
+      background: linear-gradient(135deg, #162a63, #2457d6 65%, #6087ec);
+      box-shadow: var(--shadow);
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 6px; font-size: clamp(26px, 4vw, 40px); line-height: 1.15; }
+    h2 { margin-bottom: 16px; font-size: 21px; }
+    h3 { margin-bottom: 8px; font-size: 15px; }
+    .hero p { margin: 0; color: #dfe8ff; }
+    .score {
+      min-width: 158px;
+      padding: 18px 22px;
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: 14px;
+      text-align: center;
+      background: rgba(255,255,255,.12);
+    }
+    .score strong { display: block; font-size: 40px; line-height: 1; }
+    .score span { display: block; margin-top: 8px; font-weight: 700; letter-spacing: .08em; }
+    .meta { margin-top: 18px; color: var(--muted); }
+    .section {
+      margin-top: 20px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+    .cards { display: grid; grid-template-columns: repeat(5, minmax(130px, 1fr)); gap: 12px; }
+    .card { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #fbfcfe; }
+    .card .label { min-height: 38px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .card .value { margin-top: 8px; font-size: 26px; font-weight: 750; }
+    .file-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .file { min-width: 0; padding: 18px; border: 1px solid var(--line); border-radius: 12px; }
+    dl { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 7px 12px; margin: 14px 0 0; }
+    dt { color: var(--muted); }
+    dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    code { padding: 2px 5px; border-radius: 5px; background: #f0f3f8; overflow-wrap: anywhere; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 750; letter-spacing: .04em; }
+    .risk-low, .status-passed { background: var(--low); }
+    .risk-medium, .status-warning, .status-skipped { background: var(--medium); }
+    .risk-high, .status-failed { background: var(--high); }
+    .risk-critical, .status-error { background: var(--critical); }
+    .finding { padding: 14px 16px; border-left: 5px solid var(--high); border-radius: 8px; background: #fff4f1; }
+    .finding + .finding { margin-top: 10px; }
+    .finding.risk-critical { border-color: var(--critical); background: #fff0f5; color: var(--ink); }
+    .finding-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+    .location { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .empty { margin: 0; padding: 18px; border: 1px dashed #b7c2d2; border-radius: 10px; color: var(--muted); text-align: center; }
+    details { border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    details + details { margin-top: 10px; }
+    summary { padding: 13px 15px; cursor: pointer; font-weight: 700; }
+    details[open] summary { border-bottom: 1px solid var(--line); background: #f8faff; }
+    .detail-body { padding: 14px 15px 16px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: #44506a; background: #f6f8fc; font-size: 12px; text-transform: uppercase; letter-spacing: .025em; }
+    tr:last-child td { border-bottom: 0; }
+    td { max-width: 390px; overflow-wrap: anywhere; }
+    pre { max-height: 320px; margin: 10px 0 0; padding: 12px; overflow: auto; border-radius: 8px; background: #111a2d; color: #dce6ff; white-space: pre-wrap; word-break: break-word; }
+    .footer { margin-top: 24px; color: var(--muted); text-align: center; font-size: 12px; }
+    @media (max-width: 900px) {
+      .cards { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+      .file-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      .page { width: min(100% - 18px, 1220px); margin-top: 10px; }
+      .hero { grid-template-columns: 1fr; padding: 22px; }
+      .score { width: 100%; }
+      .section { padding: 17px; }
+      .cards { grid-template-columns: 1fr 1fr; }
+    }
+    @media print {
+      body { background: #fff; }
+      .page { width: 100%; margin: 0; }
+      .hero, .section { box-shadow: none; break-inside: avoid; }
+      details { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div>
+        <h1>Tabulint Review Report</h1>
+        <p>Deterministic Excel change review · Version {{ report.tool_version }}</p>
+      </div>
+      <div class="score" aria-label="Risk score">
+        <strong>{{ report.summary.risk_score }}</strong>
+        <span>{{ report.summary.risk_level }}</span>
+      </div>
+    </header>
+    <p class="meta">Reviewed at {{ report.reviewed_at }}</p>
+
+    <section class="section" id="files">
+      <h2>Workbook files</h2>
+      <div class="file-grid">
+      {% for label, file in (("Before", report.before_file), ("After", report.after_file)) %}
+        <article class="file">
+          <h3>{{ label }} · {{ file.name }}</h3>
+          <dl>
+            <dt>Path</dt><dd><code>{{ file.path }}</code></dd>
+            <dt>Type</dt><dd>{{ file.suffix }}</dd>
+            <dt>Size</dt><dd>{{ file.size_bytes }} bytes</dd>
+            <dt>SHA-256</dt><dd><code>{{ file.sha256 }}</code></dd>
+            <dt>Modified</dt><dd>{{ file.modified_at }}</dd>
+            <dt>VBA detected</dt><dd>{{ file.has_vba | display }}</dd>
+          </dl>
+        </article>
+      {% endfor %}
+      </div>
+    </section>
+
+    <section class="section" id="summary">
+      <h2>Core statistics</h2>
+      <div class="cards">
+        <div class="card"><div class="label">Changed cells</div><div class="value">{{ report.summary.changed_cells }}</div></div>
+        <div class="card"><div class="label">Changed formulas</div><div class="value">{{ report.summary.changed_formulas }}</div></div>
+        <div class="card"><div class="label">Formula overwrites</div><div class="value">{{ report.summary.formula_overwrites }}</div></div>
+        <div class="card"><div class="label">Hidden sheets added</div><div class="value">{{ report.summary.added_hidden_sheets }}</div></div>
+        <div class="card"><div class="label">External links added</div><div class="value">{{ report.summary.added_external_links }}</div></div>
+        <div class="card"><div class="label">Rules passed</div><div class="value">{{ report.summary.rules_passed }}</div></div>
+        <div class="card"><div class="label">Rules failed</div><div class="value">{{ report.summary.rules_failed }}</div></div>
+        <div class="card"><div class="label">Rule warnings</div><div class="value">{{ report.summary.rules_warnings }}</div></div>
+        <div class="card"><div class="label">Rules skipped</div><div class="value">{{ report.summary.rules_skipped }}</div></div>
+        <div class="card"><div class="label">Rule errors</div><div class="value">{{ report.summary.rules_errors }}</div></div>
+        <div class="card"><div class="label">Macro status changed</div><div class="value">{{ report.summary.macro_status_changed | display }}</div></div>
+        <div class="card"><div class="label">Risk level</div><div class="value"><span class="badge risk-{{ report.summary.risk_level | lower }}">{{ report.summary.risk_level }}</span></div></div>
+      </div>
+    </section>
+
+    <section class="section" id="high-risk">
+      <h2>High-risk findings</h2>
+      {% if high_risk_findings %}
+        {% for finding in high_risk_findings %}
+        <article class="finding risk-{{ finding.level | lower }}">
+          <div class="finding-head">
+            <span class="badge risk-{{ finding.level | lower }}">{{ finding.level }}</span>
+            <strong>{{ finding.category }}</strong>
+            <span class="location">{{ finding.location }}</span>
+          </div>
+          <div>{{ finding.description }}</div>
+          {% if finding.evidence %}<pre>{{ finding.evidence | pretty_json }}</pre>{% endif %}
+        </article>
+        {% endfor %}
+      {% else %}<p class="empty">No HIGH or CRITICAL findings were recorded.</p>{% endif %}
+    </section>
+
+    <section class="section" id="structure">
+      <h2>Workbook structure changes ({{ report.structure_changes | length }})</h2>
+      {% if report.structure_changes %}
+        {% for change in report.structure_changes %}
+        <details>
+          <summary><span class="badge risk-{{ change.risk_level | lower }}">{{ change.risk_level }}</span> {{ change.change_type }} · {{ change.location }}</summary>
+          <div class="detail-body">
+            <p>{{ change.description }}</p>
+            <dl><dt>Before</dt><dd>{{ change.before | display }}</dd><dt>After</dt><dd>{{ change.after | display }}</dd></dl>
+            {% if change.evidence %}<pre>{{ change.evidence | pretty_json }}</pre>{% endif %}
+          </div>
+        </details>
+        {% endfor %}
+      {% else %}<p class="empty">No workbook structure changes.</p>{% endif %}
+    </section>
+
+    <section class="section" id="overwrites">
+      <h2>Formula overwrites ({{ formula_overwrites | length }})</h2>
+      {% if formula_overwrites %}
+      <div class="table-wrap"><table>
+        <thead><tr><th>Risk</th><th>Location</th><th>Original formula</th><th>Replacement value</th><th>Replacement kind</th><th>Manual review recommendation</th><th>Description</th><th>Neighbor pattern</th></tr></thead>
+        <tbody>{% for change in formula_overwrites %}<tr>
+          <td><span class="badge risk-{{ change.risk_level | lower }}">{{ change.risk_level }}</span></td>
+          <td><code>{{ change.location }}</code></td><td><code>{{ change.before_formula }}</code></td>
+          <td>{{ change.replacement_value | display }}</td><td>{{ change.replacement_kind | display }}</td>
+          <td>{{ change.manual_review_recommendation | display }}</td>
+          <td>{{ change.description }}</td><td>{{ change.neighboring_formula_pattern | display }}</td>
+        </tr>{% endfor %}</tbody>
+      </table></div>
+      {% else %}<p class="empty">No formula-to-non-formula changes were recorded.</p>{% endif %}
+    </section>
+
+    <section class="section" id="formulas">
+      <h2>Formula changes ({{ report.formula_changes | length }})</h2>
+      {% if report.formula_changes %}
+        {% for change in report.formula_changes %}
+        <details>
+          <summary><span class="badge risk-{{ change.risk_level | lower }}">{{ change.risk_level }}</span> {{ change.change_type }} · {{ change.location }}</summary>
+          <div class="detail-body">
+            <p>{{ change.description }}</p>
+            <dl>
+              <dt>Before</dt><dd><code>{{ change.before_formula | display }}</code></dd>
+              <dt>After</dt><dd><code>{{ change.after_formula | display }}</code></dd>
+              <dt>Supported</dt><dd>{{ change.supported_analysis | display }}</dd>
+              <dt>High impact</dt><dd>{{ change.high_impact | display }}</dd>
+              <dt>Refs before</dt><dd>{{ change.references_before | display }}</dd>
+              <dt>Refs after</dt><dd>{{ change.references_after | display }}</dd>
+              <dt>Excluded refs</dt><dd>{{ change.excluded_references | display }}</dd>
+            </dl>
+            {% if change.evidence %}<pre>{{ change.evidence | pretty_json }}</pre>{% endif %}
+          </div>
+        </details>
+        {% endfor %}
+      {% else %}<p class="empty">No formula changes.</p>{% endif %}
+    </section>
+
+    <section class="section" id="cells">
+      <h2>Cell changes ({{ report.cell_changes | length }})</h2>
+      {% if report.cell_changes %}
+        {% for change in report.cell_changes %}
+        <details>
+          <summary><span class="badge risk-{{ change.risk_level | lower }}">{{ change.risk_level }}</span> {{ change.change_type }} · {{ change.location }}</summary>
+          <div class="detail-body">
+            <p>{{ change.description }}</p>
+            <dl>
+              <dt>Before value</dt><dd>{{ change.before.value | display if change.before else "—" }}</dd>
+              <dt>Before kind</dt><dd>{{ change.before.kind if change.before else "—" }}</dd>
+              <dt>Before formula</dt><dd><code>{{ change.before.formula | display if change.before else "—" }}</code></dd>
+              <dt>After value</dt><dd>{{ change.after.value | display if change.after else "—" }}</dd>
+              <dt>After kind</dt><dd>{{ change.after.kind if change.after else "—" }}</dd>
+              <dt>After formula</dt><dd><code>{{ change.after.formula | display if change.after else "—" }}</code></dd>
+            </dl>
+            {% if change.evidence %}<pre>{{ change.evidence | pretty_json }}</pre>{% endif %}
+          </div>
+        </details>
+        {% endfor %}
+      {% else %}<p class="empty">No cell changes.</p>{% endif %}
+    </section>
+
+    <section class="section" id="dependencies">
+      <h2>Dependency impact summary ({{ report.dependency_impacts | length }})</h2>
+      {% if report.dependency_impacts %}
+      <div class="table-wrap"><table>
+        <thead><tr><th>Cell</th><th>Upstream</th><th>Downstream</th><th>Reachable</th><th>Sheets</th><th>Critical cells</th><th>Paths / limits</th><th>Evidence</th></tr></thead>
+        <tbody>{% for impact in report.dependency_impacts %}<tr>
+          <td><code>{{ impact.cell }}</code></td><td>{{ impact.direct_upstream | display }}</td><td>{{ impact.direct_downstream | display }}</td>
+          <td>{{ impact.downstream_cell_count }}</td><td>{{ impact.involved_sheet_count }}</td>
+          <td>{{ impact.critical_cells_impacted | display }}</td>
+          <td>depth={{ impact.traversal_depth }}, cycle={{ impact.cycle_detected | display }}, truncated={{ impact.truncated | display }}<br>{{ impact.path_examples | display }}</td>
+          <td>{% if impact.evidence %}<pre>{{ impact.evidence | pretty_json }}</pre>{% else %}—{% endif %}</td>
+        </tr>{% endfor %}</tbody>
+      </table></div>
+      {% else %}<p class="empty">No dependency impacts were recorded.</p>{% endif %}
+    </section>
+
+    <section class="section" id="rules">
+      <h2>Business rule results ({{ report.rule_results | length }})</h2>
+      {% if report.rule_results %}
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Rule</th><th>Type</th><th>Severity</th><th>Location</th><th>Reason</th></tr></thead>
+        <tbody>{% for rule in report.rule_results %}<tr>
+          <td><span class="badge status-{{ rule.status | lower }}">{{ rule.status }}</span></td><td>{{ rule.name }}</td><td><code>{{ rule.rule_type }}</code></td>
+          <td>{{ rule.severity }}</td><td>{{ rule.location | display }}</td><td>{{ rule.reason }}{% if rule.evidence %}<pre>{{ rule.evidence | pretty_json }}</pre>{% endif %}</td>
+        </tr>{% endfor %}</tbody>
+      </table></div>
+      {% else %}<p class="empty">No business rules were configured.</p>{% endif %}
+    </section>
+
+    <section class="section" id="risk-factors">
+      <h2>Risk score composition ({{ report.risk_factors | length }})</h2>
+      {% if report.risk_factors %}
+      <div class="table-wrap"><table>
+        <thead><tr><th>Risk type</th><th>Location</th><th>Points</th><th>Description</th><th>Evidence</th></tr></thead>
+        <tbody>{% for factor in report.risk_factors %}<tr>
+          <td><code>{{ factor.risk_type }}</code></td><td>{{ factor.location }}</td><td><strong>+{{ factor.points }}</strong></td>
+          <td>{{ factor.description }}</td><td>{% if factor.evidence %}<pre>{{ factor.evidence | pretty_json }}</pre>{% else %}—{% endif %}</td>
+        </tr>{% endfor %}</tbody>
+      </table></div>
+      {% else %}<p class="empty">No risk factors contributed points.</p>{% endif %}
+    </section>
+
+    <section class="section" id="limitations">
+      <h2>Tool limitations</h2>
+      {% if report.limitations %}<ul>{% for limitation in report.limitations %}<li>{{ limitation }}</li>{% endfor %}</ul>
+      {% else %}<p class="empty">No additional limitations were recorded for this review.</p>{% endif %}
+    </section>
+
+    <section class="section" id="errors">
+      <h2>Errors and skipped items</h2>
+      {% if report.errors %}<h3>Errors</h3><ul>{% for error in report.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+      {% if skipped_or_error_rules %}
+        <h3>Skipped or errored rules</h3>
+        <ul>{% for rule in skipped_or_error_rules %}<li><span class="badge status-{{ rule.status | lower }}">{{ rule.status }}</span> {{ rule.name }} — {{ rule.reason }}</li>{% endfor %}</ul>
+      {% endif %}
+      {% if not report.errors and not skipped_or_error_rules %}<p class="empty">No errors or skipped items.</p>{% endif %}
+    </section>
+
+    <p class="footer">Generated locally by Tabulint {{ report.tool_version }}. This report contains deterministic review output and does not execute workbook content.</p>
+  </main>
+</body>
+</html>

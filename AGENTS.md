@@ -1,4 +1,4 @@
-# SheetProof agent guide
+# Tabulint agent guide
 
 This file defines the repository constraints for human contributors and coding agents. The
 central rule is: **programs validate; AI may explain evidence but must never decide whether a
@@ -6,14 +6,14 @@ workbook is correct.**
 
 ## Architecture
 
-- `sheetproof/parser/`: bounded, non-executing workbook and formula fact extraction.
-- `sheetproof/diff/`: structure, semantic cell, formula, and copied-pattern differences.
-- `sheetproof/graph/`: bounded dependency graph construction and impact traversal.
-- `sheetproof/rules/`: safe YAML loading and deterministic built-in rules.
-- `sheetproof/risk/`: configurable, deduplicated, capped risk contributions.
-- `sheetproof/reports/`: JSON and autoescaped, offline HTML generated only from `ReviewResult`.
-- `sheetproof/services/`: the single orchestration path shared by interfaces.
-- `sheetproof/cli.py`: Typer adapter and documented exit-code contract.
+- `tabulint/parser/`: bounded, non-executing workbook and formula fact extraction.
+- `tabulint/diff/`: structure, semantic cell, formula, and copied-pattern differences.
+- `tabulint/graph/`: bounded dependency graph construction and impact traversal.
+- `tabulint/rules/`: safe YAML loading and deterministic built-in rules.
+- `tabulint/risk/`: configurable, deduplicated, capped risk contributions.
+- `tabulint/reports/`: JSON and autoescaped, offline HTML generated only from `ReviewResult`.
+- `tabulint/services/`: the single orchestration path shared by interfaces.
+- `tabulint/cli.py`: Typer adapter and documented exit-code contract.
 - `web/app.py`: local Streamlit adapter; no analysis logic belongs here.
 - `action/` and `scripts/`: GitHub Action adapter and base/head workbook orchestration.
 - `examples/`: synthetic rules and reproducible demo-workbook generator.
@@ -28,9 +28,9 @@ CI must not maintain alternate verdict logic.
 python -m venv .venv
 python -m pip install -e ".[dev,web]"
 python examples/generate_demo_workbooks.py
-sheetproof version
-sheetproof compare examples/generated/before.xlsx examples/generated/after_safe.xlsx \
-  --config examples/sheetproof.example.yml --json build/report.json --html build/report.html
+tabulint version
+tabulint compare examples/generated/before.xlsx examples/generated/after_safe.xlsx \
+  --config examples/tabulint.example.yml --json build/report.json --html build/report.html
 streamlit run web/app.py
 ```
 
@@ -39,8 +39,8 @@ streamlit run web/app.py
 ```bash
 pytest
 ruff check .
-mypy sheetproof
-python -m compileall -q sheetproof web scripts examples
+mypy tabulint
+python -m compileall -q tabulint web scripts examples
 ```
 
 Run focused tests while iterating, then the full suite. A change to a core rule, parser fact,

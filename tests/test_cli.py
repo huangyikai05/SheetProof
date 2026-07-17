@@ -9,8 +9,8 @@ import pytest
 from openpyxl import Workbook
 from typer.testing import CliRunner
 
-from sheetproof.cli import app
-from tests.conftest import WorkbookFactory
+from tabulint.cli import app
+from tests.conftest import WorkbookFactory, add_vba_project
 
 runner = CliRunner()
 
@@ -125,7 +125,7 @@ def test_compare_command_returns_two_for_bad_configuration(
     )
 
     assert result.exit_code == 2
-    assert "Invalid SheetProof configuration" in result.output
+    assert "Invalid Tabulint configuration" in result.output
     assert "requires 'range'" in result.output
     assert "Traceback" not in result.output
 
@@ -159,12 +159,58 @@ def test_compare_command_writes_json_and_offline_html_reports(
     assert payload["cell_changes"][0]["change_type"] == "text_changed"
     html = html_path.read_text(encoding="utf-8")
     assert "<!doctype html>" in html.lower()
-    assert "SheetProof" in html
+    assert "Tabulint" in html
     assert "before" in html
     assert "after" in html
     assert "cdn." not in html.lower()
     assert str(json_path.resolve()) in result.output
     assert str(html_path.resolve()) in result.output
+
+
+def test_compare_blocks_relocated_vba_project_end_to_end(
+    workbook_factory: WorkbookFactory,
+    tmp_path: Path,
+) -> None:
+    before = workbook_factory("macro-before.xlsx", _safe_before)
+    after = workbook_factory("macro-after.xlsx", _safe_before)
+    add_vba_project(after, part_name="xl/custom/project.bin")
+    config = tmp_path / "macro-policy.yml"
+    config.write_text(
+        "rules:\n  - name: No new macros\n    type: no_macro_added\n",
+        encoding="utf-8",
+    )
+    json_path = tmp_path / "macro-result.json"
+
+    result = runner.invoke(
+        app,
+        [
+            "compare",
+            str(before),
+            str(after),
+            "--config",
+            str(config),
+            "--json",
+            str(json_path),
+        ],
+    )
+
+    assert result.exit_code == 1, result.output
+    payload = json.loads(json_path.read_text(encoding="utf-8"))
+    assert payload["before_file"]["has_vba"] is False
+    assert payload["after_file"]["has_vba"] is True
+    assert payload["summary"]["macro_status_changed"] is True
+    macro_change = next(
+        change
+        for change in payload["structure_changes"]
+        if change["change_type"] == "macro_added"
+    )
+    assert macro_change["risk_level"] == "CRITICAL"
+    macro_rule = next(
+        rule for rule in payload["rule_results"] if rule["rule_type"] == "no_macro_added"
+    )
+    assert macro_rule["status"] == "FAILED"
+    assert macro_rule["evidence"]["macro_added"] is True
+    assert "macro_added" in {factor["risk_type"] for factor in payload["risk_factors"]}
 
 
 def test_inspect_and_rules_validate_commands(
@@ -181,7 +227,7 @@ def test_inspect_and_rules_validate_commands(
     assert "1 sheets" in inspect_result.output
     assert json.loads(snapshot_path.read_text(encoding="utf-8"))["sheets"][0]["name"] == "Main"
 
-    config = tmp_path / "sheetproof.yml"
+    config = tmp_path / "tabulint.yml"
     config.write_text("rules: []\n", encoding="utf-8")
     rules_result = runner.invoke(app, ["rules", "validate", str(config)])
     assert rules_result.exit_code == 0, rules_result.output

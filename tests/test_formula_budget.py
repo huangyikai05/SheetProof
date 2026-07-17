@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from openpyxl import Workbook
 
-from sheetproof.diff.formula_diff import FormulaDiffer
-from sheetproof.diff.workbook_diff import WorkbookDiffer
-from sheetproof.parser.workbook import WorkbookParser
+from tabulint.diff.formula_diff import FormulaDiffer
+from tabulint.diff.workbook_diff import WorkbookDiffer
+from tabulint.parser.workbook import WorkbookParser
 from tests.conftest import WorkbookConfigurator, WorkbookFactory
 
 

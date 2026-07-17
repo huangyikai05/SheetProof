@@ -5,7 +5,8 @@ from __future__ import annotations
 import struct
 from datetime import date
 from pathlib import Path
-from zipfile import ZipFile
+from xml.etree import ElementTree
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 from openpyxl import Workbook
@@ -14,16 +15,29 @@ from openpyxl.workbook.defined_name import DefinedName
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.table import Table
 
-from sheetproof.exceptions import WorkbookParseError
-from sheetproof.models import CellKind, FormulaCalculationStatus
-from sheetproof.parser.workbook import WorkbookParser
+from tabulint.exceptions import WorkbookParseError
+from tabulint.models import CellKind, FormulaCalculationStatus
+from tabulint.parser.workbook import WorkbookParser
 from tests.conftest import WorkbookFactory, add_vba_project
+
+_CONTENT_TYPES_NAMESPACE = (
+    "http://schemas.openxmlformats.org/package/2006/content-types"
+)
+_MARKUP_COMPATIBILITY_NAMESPACE = (
+    "http://schemas.openxmlformats.org/markup-compatibility/2006"
+)
+_TEST_EXTENSION_NAMESPACE = "urn:tabulint:test-extension"
+_OTHER_EXTENSION_NAMESPACE = "urn:tabulint:other-extension"
+_VBA_RELATIONSHIP_TYPE = (
+    "http://schemas.microsoft.com/office/2006/relationships/vbaProject"
+)
+_VBA_CONTENT_TYPE = "application/vnd.ms-office.vbaproject"
 
 
 def _replace_archive_member_bytes(
     path: Path,
     member: str,
-    old: bytes,
+    old: bytes | tuple[bytes, ...],
     new: bytes,
 ) -> None:
     with ZipFile(path) as source:
@@ -34,9 +48,31 @@ def _replace_archive_member_bytes(
     with ZipFile(rewritten, "w") as target:
         for info, data in entries:
             if info.filename == member:
-                updated = data.replace(old, new, 1)
-                replaced = updated != data
-                data = updated
+                candidates = (old,) if isinstance(old, bytes) else old
+                for candidate in candidates:
+                    updated = data.replace(candidate, new, 1)
+                    if updated != data:
+                        replaced = True
+                        data = updated
+                        break
+            target.writestr(info, data)
+    assert replaced is True
+    rewritten.replace(path)
+
+
+def _replace_archive_member(path: Path, member: str, replacement: bytes) -> None:
+    with ZipFile(path) as source:
+        entries = [(info, source.read(info.filename)) for info in source.infolist()]
+        archive_comment = source.comment
+
+    rewritten = path.with_name(f"{path.stem}-member-rewritten{path.suffix}")
+    replaced = False
+    with ZipFile(rewritten, "w") as target:
+        target.comment = archive_comment
+        for info, data in entries:
+            if info.filename == member:
+                data = replacement
+                replaced = True
             target.writestr(info, data)
     assert replaced is True
     rewritten.replace(path)
@@ -192,7 +228,7 @@ def test_parser_marks_available_formula_cache_explicitly(
     _replace_archive_member_bytes(
         path,
         "xl/worksheets/sheet1.xml",
-        b"<f>1+1</f><v></v>",
+        (b"<f>1+1</f><v></v>", b"<f>1+1</f><v/>", b"<f>1+1</f><v />"),
         b"<f>1+1</f><v>2</v>",
     )
 
@@ -214,7 +250,339 @@ def test_parser_detects_inert_vba_package_member(
     assert snapshot.file.has_vba is True
     assert snapshot.file.suffix == ".xlsm"
     with ZipFile(path) as archive:
-        assert archive.read("xl/vbaProject.bin") == b"SheetProof test VBA marker"
+        assert archive.read("xl/vbaProject.bin") == b"Tabulint test VBA marker"
+
+
+def test_parser_detects_relocated_vba_project_from_opc_metadata(
+    workbook_factory: WorkbookFactory,
+) -> None:
+    path = workbook_factory("relocated-macro.xlsx")
+    add_vba_project(path, part_name="xl/custom/project.bin")
+
+    snapshot = WorkbookParser().parse(path)
+
+    assert snapshot.has_vba is True
+    assert snapshot.file.has_vba is True
+    assert snapshot.file.suffix == ".xlsx"
+
+
+def test_parser_accepts_vba_default_content_type(
+    workbook_factory: WorkbookFactory,
+) -> None:
+    path = workbook_factory("default-content-type.xlsm")
+    add_vba_project(path, content_type_as_default=True)
+
+    assert WorkbookParser().parse(path).has_vba is True
+
+
+def test_parser_matches_vba_part_names_case_insensitively(
+    workbook_factory: WorkbookFactory,
+) -> None:
+    path = workbook_factory("case-insensitive-macro.xlsm")
+    add_vba_project(
+        path,
+        part_name="xl/Custom/Project.BIN",
+        content_type_part_name="XL/custom/project.bin",
+        relationship_target="Custom/PROJECT.bin",
+    )
+
+    assert WorkbookParser().parse(path).has_vba is True
+
+
+@pytest.mark.parametrize(
+    "part_name",
+    [
+        "xl/custom/VBA%20Project.bin",
+        "xl/custom/VBA%23Project.bin",
+        "xl/custom/VBA%3FProject.bin",
+        "xl/custom/VBA%3AProject.bin",
+    ],
+    ids=["space", "hash", "question", "colon"],
+)
+def test_parser_preserves_percent_encoded_vba_part_names(
+    workbook_factory: WorkbookFactory,
+    part_name: str,
+) -> None:
+    path = workbook_factory("percent-encoded-macro.xlsm")
+    add_vba_project(path, part_name=part_name)
+
+    assert WorkbookParser().parse(path).has_vba is True
+
+
+def test_parser_does_not_infer_vba_from_conventional_filename_alone(
+    workbook_factory: WorkbookFactory,
+) -> None:
+    path = workbook_factory("unreferenced-macro.xlsm")
+    with ZipFile(path, "a", compression=ZIP_DEFLATED) as archive:
+        archive.writestr("xl/vbaProject.bin", b"inert unreferenced bytes")
+
+    assert WorkbookParser().parse(path).has_vba is False
+
+
+@pytest.mark.parametrize(
+    ("options", "message"),
+    [
+        ({"include_relationship": False}, "exactly one workbook relationship"),
+        ({"include_content_type": False}, "exactly one workbook relationship"),
+        (
+            {"content_type": "application/octet-stream"},
+            "exactly one workbook relationship",
+        ),
+        ({"relationship_target": "missing.bin"}, "missing package part"),
+    ],
+    ids=["content-type-only", "relationship-only", "wrong-content-type", "missing-target"],
+)
+def test_parser_rejects_incomplete_vba_opc_metadata(
+    workbook_factory: WorkbookFactory,
+    monkeypatch: pytest.MonkeyPatch,
+    options: dict[str, object],
+    message: str,
+) -> None:
+    path = workbook_factory("incomplete-macro.xlsm")
+    add_vba_project(path, **options)  # type: ignore[arg-type]
+
+    def unexpected_load(*args: object, **kwargs: object) -> None:
+        raise AssertionError(f"openpyxl load should not run: {args!r} {kwargs!r}")
+
+    monkeypatch.setattr("tabulint.parser.workbook.load_workbook", unexpected_load)
+    with pytest.raises(WorkbookParseError, match=message):
+        WorkbookParser().parse(path)
+
+
+@pytest.mark.parametrize(
+    ("target", "target_mode", "message"),
+    [
+        ("../../outside.bin", None, "unsafe target"),
+        (r"custom\project.bin", None, "unsafe URI"),
+        ("custom%2Fproject.bin", None, "encoded path separator"),
+        ("custom/%2E%2E/project.bin", None, "encoded unreserved character"),
+        ("project%ZZ.bin", None, "invalid percent escape"),
+        ("https://example.test/project.bin", "External", "must be internal"),
+        ("_rels/workbook.xml.rels", None, "relationships part"),
+    ],
+    ids=[
+        "root-escape",
+        "backslash",
+        "encoded-slash",
+        "encoded-dot-segment",
+        "invalid-percent",
+        "external",
+        "relationship-part",
+    ],
+)
+def test_parser_rejects_unsafe_vba_relationship_targets(
+    workbook_factory: WorkbookFactory,
+    monkeypatch: pytest.MonkeyPatch,
+    target: str,
+    target_mode: str | None,
+    message: str,
+) -> None:
+    path = workbook_factory("unsafe-macro-target.xlsm")
+    add_vba_project(path, relationship_target=target, target_mode=target_mode)
+
+    def unexpected_load(*args: object, **kwargs: object) -> None:
+        raise AssertionError(f"openpyxl load should not run: {args!r} {kwargs!r}")
+
+    monkeypatch.setattr("tabulint.parser.workbook.load_workbook", unexpected_load)
+    with pytest.raises(WorkbookParseError, match=message):
+        WorkbookParser().parse(path)
+
+
+def test_parser_applies_content_type_override_before_default(
+    workbook_factory: WorkbookFactory,
+) -> None:
+    path = workbook_factory("overridden-macro-type.xlsm")
+    add_vba_project(
+        path,
+        content_type_as_default=True,
+        override_content_type="application/octet-stream",
+    )
+
+    with pytest.raises(WorkbookParseError, match="exactly one workbook relationship"):
+        WorkbookParser().parse(path)
+
+
+def test_parser_rejects_multiple_vba_projects(
+    workbook_factory: WorkbookFactory,
+) -> None:
+    path = workbook_factory("multiple-macro-projects.xlsm")
+    add_vba_project(path)
+    add_vba_project(path, part_name="xl/custom/project.bin")
+
+    with pytest.raises(WorkbookParseError, match="exactly one workbook relationship"):
+        WorkbookParser().parse(path)
+
+
+def test_parser_rejects_case_only_archive_path_duplicates(
+    workbook_factory: WorkbookFactory,
+) -> None:
+    path = workbook_factory("case-duplicate-macro.xlsm")
+    add_vba_project(path)
+    with ZipFile(path, "a", compression=ZIP_DEFLATED) as archive:
+        archive.writestr("XL/VBAPROJECT.BIN", b"duplicate inert bytes")
+
+    with pytest.raises(WorkbookParseError, match="unsafe or duplicate archive path"):
+        WorkbookParser().parse(path)
+
+
+def test_parser_rejects_case_only_content_type_override_duplicates(
+    workbook_factory: WorkbookFactory,
+) -> None:
+    path = workbook_factory("duplicate-content-type.xlsm")
+    add_vba_project(path)
+    with ZipFile(path) as archive:
+        content_types = archive.read("[Content_Types].xml")
+    root = ElementTree.fromstring(content_types)
+    ElementTree.SubElement(
+        root,
+        f"{{{_CONTENT_TYPES_NAMESPACE}}}Override",
+        PartName="/XL/VBAPROJECT.BIN",
+        ContentType="application/vnd.ms-office.vbaProject",
+    )
+    _replace_archive_member(
+        path,
+        "[Content_Types].xml",
+        ElementTree.tostring(root, encoding="utf-8"),
+    )
+
+    with pytest.raises(WorkbookParseError, match="duplicate override part"):
+        WorkbookParser().parse(path)
+
+
+def test_parser_rejects_duplicate_relationship_ids(
+    workbook_factory: WorkbookFactory,
+) -> None:
+    path = workbook_factory("duplicate-relationship-id.xlsm")
+    add_vba_project(path)
+    member = "xl/_rels/workbook.xml.rels"
+    with ZipFile(path) as archive:
+        relationships = archive.read(member)
+    root = ElementTree.fromstring(relationships)
+    first = next(iter(root))
+    ElementTree.SubElement(root, first.tag, dict(first.attrib))
+    _replace_archive_member(path, member, ElementTree.tostring(root, encoding="utf-8"))
+
+    with pytest.raises(WorkbookParseError, match="duplicate relationship ID"):
+        WorkbookParser().parse(path)
+
+
+def test_parser_accepts_safe_utf16_opc_metadata(
+    workbook_factory: WorkbookFactory,
+) -> None:
+    path = workbook_factory("utf16-content-types.xlsx")
+    with ZipFile(path) as archive:
+        content_types = archive.read("[Content_Types].xml").decode("utf-8")
+    replacement = (
+        '<?xml version="1.0" encoding="utf-16"?>' + content_types
+    ).encode("utf-16")
+    _replace_archive_member(path, "[Content_Types].xml", replacement)
+
+    assert WorkbookParser().parse(path).has_vba is False
+
+
+@pytest.mark.parametrize(
+    ("ignorable_prefix", "accepted"),
+    [("ext", True), (None, False), ("other", False)],
+    ids=["declared", "undeclared", "different-namespace"],
+)
+def test_parser_only_ignores_declared_relationship_extensions(
+    workbook_factory: WorkbookFactory,
+    ignorable_prefix: str | None,
+    accepted: bool,
+) -> None:
+    path = workbook_factory("relationship-extension.xlsx")
+    member = "_rels/.rels"
+    with ZipFile(path) as archive:
+        relationships = archive.read(member)
+    root = ElementTree.fromstring(relationships)
+    if ignorable_prefix is not None:
+        root.set(
+            f"{{{_MARKUP_COMPATIBILITY_NAMESPACE}}}Ignorable",
+            ignorable_prefix,
+        )
+    ElementTree.SubElement(
+        root,
+        f"{{{_TEST_EXTENSION_NAMESPACE}}}Metadata",
+    )
+    ElementTree.register_namespace("mc", _MARKUP_COMPATIBILITY_NAMESPACE)
+    ElementTree.register_namespace("ext", _TEST_EXTENSION_NAMESPACE)
+    if ignorable_prefix == "other":
+        ElementTree.register_namespace("other", _OTHER_EXTENSION_NAMESPACE)
+        root.set(f"{{{_OTHER_EXTENSION_NAMESPACE}}}Marker", "true")
+    _replace_archive_member(path, member, ElementTree.tostring(root, encoding="utf-8"))
+
+    if accepted:
+        assert WorkbookParser().parse(path).has_vba is False
+    else:
+        with pytest.raises(WorkbookParseError, match="unexpected XML element"):
+            WorkbookParser().parse(path)
+
+
+def test_parser_fails_closed_on_mce_wrapped_vba_metadata(
+    workbook_factory: WorkbookFactory,
+) -> None:
+    path = workbook_factory("mce-wrapped-macro.xlsm")
+    add_vba_project(path)
+    members = (
+        (
+            "[Content_Types].xml",
+            "ContentType",
+            _VBA_CONTENT_TYPE,
+        ),
+        (
+            "xl/_rels/workbook.xml.rels",
+            "Type",
+            _VBA_RELATIONSHIP_TYPE,
+        ),
+    )
+    ElementTree.register_namespace("mc", _MARKUP_COMPATIBILITY_NAMESPACE)
+    ElementTree.register_namespace("ext", _TEST_EXTENSION_NAMESPACE)
+    for member, attribute, expected in members:
+        with ZipFile(path) as archive:
+            payload = archive.read(member)
+        root = ElementTree.fromstring(payload)
+        wrapped = next(
+            element
+            for element in root
+            if element.attrib.get(attribute, "").casefold() == expected.casefold()
+        )
+        root.remove(wrapped)
+        root.set(f"{{{_MARKUP_COMPATIBILITY_NAMESPACE}}}Ignorable", "ext")
+        root.set(
+            f"{{{_MARKUP_COMPATIBILITY_NAMESPACE}}}ProcessContent",
+            "ext:Wrapper",
+        )
+        wrapper = ElementTree.SubElement(
+            root,
+            f"{{{_TEST_EXTENSION_NAMESPACE}}}Wrapper",
+        )
+        wrapper.append(wrapped)
+        _replace_archive_member(path, member, ElementTree.tostring(root, encoding="utf-8"))
+
+    with pytest.raises(WorkbookParseError, match="markup compatibility processing"):
+        WorkbookParser().parse(path)
+
+
+@pytest.mark.parametrize("utf16", [False, True], ids=["utf-8", "utf-16"])
+def test_parser_rejects_dtd_and_entity_opc_metadata(
+    workbook_factory: WorkbookFactory,
+    utf16: bool,
+) -> None:
+    path = workbook_factory("unsafe-content-types.xlsx")
+    with ZipFile(path) as archive:
+        content_types = archive.read("[Content_Types].xml")
+    declaration = '<!DOCTYPE Types [<!ENTITY marker "unsafe">]>'
+    if utf16:
+        replacement = (
+            '<?xml version="1.0" encoding="utf-16"?>'
+            f"{declaration}{content_types.decode('utf-8')}"
+        ).encode("utf-16")
+    else:
+        replacement = declaration.encode() + content_types
+    _replace_archive_member(path, "[Content_Types].xml", replacement)
+
+    with pytest.raises(WorkbookParseError, match="prohibited XML declarations"):
+        WorkbookParser().parse(path)
 
 
 @pytest.mark.parametrize("name", ["book.xls", "book.csv", "book.txt"])
@@ -273,7 +641,7 @@ def test_archive_entry_limit_rejects_ordinary_zip_before_openpyxl(
     def unexpected_load(*args: object, **kwargs: object) -> None:
         raise AssertionError(f"openpyxl load should not run: {args!r} {kwargs!r}")
 
-    monkeypatch.setattr("sheetproof.parser.workbook.load_workbook", unexpected_load)
+    monkeypatch.setattr("tabulint.parser.workbook.load_workbook", unexpected_load)
 
     with pytest.raises(
         WorkbookParseError,
@@ -301,7 +669,7 @@ def test_archive_entry_limit_ignores_forged_eocd_count(
     def unexpected_load(*args: object, **kwargs: object) -> None:
         raise AssertionError(f"openpyxl load should not run: {args!r} {kwargs!r}")
 
-    monkeypatch.setattr("sheetproof.parser.workbook.load_workbook", unexpected_load)
+    monkeypatch.setattr("tabulint.parser.workbook.load_workbook", unexpected_load)
     with pytest.raises(
         WorkbookParseError,
         match="more than the configured 10 entries",
@@ -341,7 +709,7 @@ def test_large_merged_range_is_rejected_during_archive_preflight(
     def unexpected_load(*args: object, **kwargs: object) -> None:
         raise AssertionError(f"openpyxl load should not run: {args!r} {kwargs!r}")
 
-    monkeypatch.setattr("sheetproof.parser.workbook.load_workbook", unexpected_load)
+    monkeypatch.setattr("tabulint.parser.workbook.load_workbook", unexpected_load)
 
     with pytest.raises(WorkbookParseError, match="configured limit is 100"):
         WorkbookParser(max_cells=10_000, max_merged_cells=100).parse(path)
@@ -398,7 +766,11 @@ def test_parser_rejects_xfe_cell_and_merged_range(
     _replace_archive_member_bytes(
         merge_path,
         "xl/worksheets/sheet1.xml",
-        b'<mergeCell ref="A2:B2"/>',
+        (
+            b'<mergeCell ref="A2:B2"/>',
+            b'<mergeCell ref="A2:B2" />',
+            b'<mergeCell ref="A2:B2"></mergeCell>',
+        ),
         b'<mergeCell ref="XFE1:XFE2"/>',
     )
 
@@ -433,7 +805,7 @@ def test_relocated_worksheet_xml_still_receives_cell_and_merge_preflight(
     def unexpected_load(*args: object, **kwargs: object) -> None:
         raise AssertionError(f"openpyxl load should not run: {args!r} {kwargs!r}")
 
-    monkeypatch.setattr("sheetproof.parser.workbook.load_workbook", unexpected_load)
+    monkeypatch.setattr("tabulint.parser.workbook.load_workbook", unexpected_load)
 
     with pytest.raises(WorkbookParseError, match="out-of-bounds cell: 'XFE1'"):
         WorkbookParser().parse(cell_path)

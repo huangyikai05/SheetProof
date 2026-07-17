@@ -1,1 +1,1 @@
-"""SheetProof's source-generated test suite."""
+"""Tabulint's source-generated test suite."""

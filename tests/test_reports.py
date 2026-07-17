@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 from openpyxl import Workbook
 
-from sheetproof.exceptions import ReportGenerationError
-from sheetproof.reports.html_report import render_html
-from sheetproof.reports.json_report import render_json
-from sheetproof.services.review_service import ReviewService
+from tabulint.exceptions import ReportGenerationError
+from tabulint.reports.html_report import render_html
+from tabulint.reports.json_report import render_json
+from tabulint.services.review_service import ReviewService
 from tests.conftest import WorkbookFactory
 
 
@@ -131,7 +131,7 @@ def test_html_dependency_summary_exposes_critical_and_before_graph_evidence(
     workbook_factory: WorkbookFactory,
     tmp_path: Path,
 ) -> None:
-    config = tmp_path / "sheetproof.yml"
+    config = tmp_path / "tabulint.yml"
     config.write_text('critical_cells:\n  - "Output!A1"\n', encoding="utf-8")
     result = ReviewService().review(
         workbook_factory("dependency-before.xlsx", _dependency_before),

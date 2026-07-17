@@ -8,10 +8,10 @@ import pytest
 from openpyxl import Workbook
 from openpyxl.styles import Color, Font
 
-from sheetproof.diff.cell_diff import CellDiffer
-from sheetproof.diff.workbook_diff import WorkbookDiffer
-from sheetproof.models import CellKind, CellSnapshot, RiskLevel, SheetSnapshot, StyleSummary
-from sheetproof.parser.workbook import WorkbookParser
+from tabulint.diff.cell_diff import CellDiffer
+from tabulint.diff.workbook_diff import WorkbookDiffer
+from tabulint.models import CellKind, CellSnapshot, RiskLevel, SheetSnapshot, StyleSummary
+from tabulint.parser.workbook import WorkbookParser
 from tests.conftest import WorkbookConfigurator, WorkbookFactory
 
 
