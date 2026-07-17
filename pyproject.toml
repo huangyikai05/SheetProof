@@ -34,7 +34,7 @@ web = ["streamlit>=1.39,<2"]
 dev = [
   "mypy>=1.11,<2",
   "pytest>=8.3,<9",
-  "pytest-cov>=5,<7",
+  "pytest-cov>=5,<8",
   "ruff>=0.7,<1",
   "types-PyYAML>=6.0.12",
 ]
